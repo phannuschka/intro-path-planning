@@ -30,16 +30,12 @@ class PlanerBase(object):
         """
         newStartList = list()
         for start in startList:
-            if (len(start) != self._collisionChecker.getDim()):
-                continue
             if self._collisionChecker.pointInCollision(start):
                 continue
             newStartList.append(start)
 
         newGoalList = list()
         for goal in goalList:
-            if (len(goal) != self._collisionChecker.getDim()):
-                continue
             if self._collisionChecker.pointInCollision(goal):
                 continue
             newGoalList.append(goal)

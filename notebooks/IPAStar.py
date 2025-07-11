@@ -9,6 +9,7 @@ Remark: The code is a slightly modified version of AStar, whithout reopening of 
 License is based on Creative Commons: Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) (pls. check: http://creativecommons.org/licenses/by-nc/4.0/)
 """
 
+from typing import List
 import copy
 import networkx as nx
 import heapq
@@ -33,6 +34,9 @@ class AStar(PlanerBase):
         self.goalFound = False
 
         self.limits = self._collisionChecker.getEnvironmentLimits()
+
+        self.dof = None
+        self.discretization = None
 
         self.w = 0.5  
         return
@@ -60,6 +64,16 @@ class AStar(PlanerBase):
             config["heuristic"] = "euclid"
 
         """
+        self.dof = config["dof"]
+        self.discretization = config["discretization"]
+        self._setLimits(config["lowLimits"], config["highLimits"])
+
+        # compute discretization steps for each dim
+        discretization_steps = [0] * self.dof
+        for i in range(self.dof):
+            axis_length = self.limits[i][1] - self.limits[i][0]
+            discretization_steps[i] = axis_length / self.discretization[i]
+
         # 0. reset
         self.graph.clear()
 
@@ -77,16 +91,18 @@ class AStar(PlanerBase):
             currentBestName = self._getBestNodeName()
             breakNumber = 0
             while currentBestName:
-              if breakNumber > 1000:
-                break
+              # if breakNumber > 1000:
+              #   break
 
               breakNumber += 1
 
               currentBest = self.graph.nodes[currentBestName]
 
-              if currentBest["pos"] == self.goal:
+              if self._isNeighbour(currentBest["pos"], self.goal, discretization_steps):
+                # TODO: check whether path is in collision
                 self.solutionPath = []
-                self._collectPath( currentBestName, self.solutionPath )
+                self._addGraphNode(self.goal, currentBestName)
+                self._collectPath( self._getNodeID(self.goal), self.solutionPath )
                 self.goalFound = True
                 break
 
@@ -98,7 +114,7 @@ class AStar(PlanerBase):
               self.graph.nodes[currentBestName]['collision'] = 0
 
               # handleNode merges with former expandNode
-              self._handleNode(currentBestName)
+              self._handleNode(currentBestName, discretization_steps)
               currentBestName = self._getBestNodeName()
 
             if self.goalFound:
@@ -108,6 +124,14 @@ class AStar(PlanerBase):
         except:
             print("Planning failed")
             return None
+
+    def _isNeighbour(self, pos1, pos2, discretization_steps: List[float]) -> bool:
+        """Check whether two positions are within 1 discretization step in each dimension"""
+        assert(len(pos1) == len(pos2) == self.dof)
+        for i in range(self.dof):
+            if abs(pos1[i] - pos2[i]) > discretization_steps[i]:
+                return False
+        return True
 
     def _insertNodeNameInOpenList(self, nodeName):
         """Get an existing node stored in graph and put it in the OpenList"""
@@ -127,9 +151,9 @@ class AStar(PlanerBase):
    
     def _setLimits(self, lowLimit, highLimit):
         """ Sets the limits of the investigated search space """
-        assert(len(lowLimit)==len(highLimit)==self.dim)
+        assert(len(lowLimit)==len(highLimit)==self.dof)
         self.limits = list()
-        for i in range(self.dim):
+        for i in range(self.dof):
           self.limits.append([lowLimit[i],highLimit[i]])
         return
   
@@ -138,12 +162,13 @@ class AStar(PlanerBase):
         return heapq.heappop(self.openList)[1]
 
     @IPPerfMonitor
-    def _handleNode(self, nodeName):
+    def _handleNode(self, nodeName, discretization_steps: List[float]):
         """Generats possible successor positions in all dimensions"""
         result =  []
         node = self.graph.nodes[nodeName]
         for i in range(len(node["pos"])):
-            for u in [-1,1]:
+            discretization_step = discretization_steps[i]
+            for u in [-discretization_step, discretization_step]:
                     newPos = copy.copy(node["pos"])
                     newPos[i] += u
                     if not self._inLimits(newPos):
@@ -160,14 +185,16 @@ class AStar(PlanerBase):
         return result
 
     @IPPerfMonitor
-    def _handleNode9(self, nodeName):
+    def _handleNode9(self, nodeName, discretization_steps: List[float]):
         """Generats possible successor positions also in diagonal direction"""
         result =  []
         node = self.graph.nodes[nodeName]
         for i in range(len(node["pos"])):
-          for j in range(len(node["pos"])): 
-              for u in [-1,1]:
-                  for v in [-1,0,1]:
+          for j in range(len(node["pos"])):
+              discretization_step_u = discretization_steps[i]
+              discretization_step_v = discretization_steps[j]
+              for u in [-discretization_step_u, discretization_step_u]:
+                  for v in [-discretization_step_v, 0, discretization_step_v]:
                         newPos = copy.copy(node["pos"])
                         newPos[i] += u
                         newPos[j] += v
@@ -205,7 +232,6 @@ class AStar(PlanerBase):
     def _collectPath(self, nodeName, solutionPath):
 
       fathers = list(self.graph.successors(nodeName))
-      #print len(fathers)
       if len(fathers) == 1:
         self._collectPath( fathers[0], solutionPath )
       elif len(fathers) == 0:

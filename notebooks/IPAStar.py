@@ -14,6 +14,7 @@ import copy
 import networkx as nx
 import heapq
 import math
+import numpy as np
 from scipy.spatial.distance import euclidean, cityblock
 from IPPlanerBase import PlanerBase
 
@@ -144,7 +145,10 @@ class AStar(PlanerBase):
 
         if fatherName != None:
             self.graph.add_edge(self._getNodeID(pos), fatherName)
-            self.graph.nodes[self._getNodeID(pos)]["g"] = self.graph.nodes[fatherName]["g"] + 1
+            pos1 = np.array(pos)
+            pos2 = np.array(self.graph.nodes[fatherName]["pos"])
+            distance = np.linalg.norm(pos1 - pos2)
+            self.graph.nodes[self._getNodeID(pos)]["g"] = self.graph.nodes[fatherName]["g"] + distance
 
         self._insertNodeNameInOpenList(self._getNodeID(pos))
 

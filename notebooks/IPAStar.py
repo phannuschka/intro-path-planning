@@ -67,6 +67,7 @@ class AStar(PlanerBase):
         """
         self.dof = config["dof"]
         self.discretization = config["discretization"]
+        self.reopen = config["reopen"]
         self._setLimits(config["lowLimits"], config["highLimits"])
 
         # compute discretization steps for each dim
@@ -122,8 +123,8 @@ class AStar(PlanerBase):
                 return self.solutionPath
             else:
                 return None
-        except:
-            print("Planning failed")
+        except Exception as e:
+            print("Planning failed: ", e)
             return None
 
     def _isNeighbour(self, pos1, pos2, discretization_steps: List[float]) -> bool:
@@ -139,7 +140,7 @@ class AStar(PlanerBase):
         heapq.heappush(self.openList,(self._evaluateNode(nodeName),nodeName))
 
     @IPPerfMonitor
-    def _addGraphNode(self, pos, fatherName=None):
+    def _addGraphNode(self, pos, fatherName=None, replaceInOpen=False):
         """Add a node based on the position into the graph. Attention: Existing node is overwritten!"""
         self.graph.add_node(self._getNodeID(pos), pos=pos, status='open', g=0)
 
@@ -149,6 +150,12 @@ class AStar(PlanerBase):
             pos2 = np.array(self.graph.nodes[fatherName]["pos"])
             distance = np.linalg.norm(pos1 - pos2)
             self.graph.nodes[self._getNodeID(pos)]["g"] = self.graph.nodes[fatherName]["g"] + distance
+
+        if replaceInOpen:
+            keys = list(map(lambda x: x[1], self.openList))
+            if self._getNodeID(pos) in keys:
+                idx = keys.index(self._getNodeID(pos))
+                del self.openList[idx]
 
         self._insertNodeNameInOpenList(self._getNodeID(pos))
 
@@ -177,14 +184,24 @@ class AStar(PlanerBase):
                     newPos[i] += u
                     if not self._inLimits(newPos):
                         continue
-                    try:
-                        # Do not do reopening! If node already in graph do not add it... Concequences?
-                        self.graph.nodes[self._getNodeID(newPos)]
-                        continue
-                    except:
-                        pass
+                    
+                    newNodeID = self._getNodeID(newPos)
+                    if newNodeID in self.graph.nodes:
+                        if self.reopen:
+                            newPosOldG = self.graph.nodes[newNodeID]["g"]
+                            
+                            node = self.graph.nodes[nodeName]
+                            pos1 = np.array(node["pos"])
+                            pos2 = np.array(newPos)
+                            distance = np.linalg.norm(pos1 - pos2)
 
-                    self._addGraphNode(newPos,nodeName)
+                            tentativeGScore = node["g"] + distance
+
+                            if tentativeGScore < newPosOldG:
+                                self.graph.remove_edges_from(list(self.graph.out_edges(newNodeID)))
+                                self._addGraphNode(newPos,nodeName, replaceInOpen=True)
+                    else:
+                        self._addGraphNode(newPos,nodeName)
 
         return result
 
@@ -204,14 +221,24 @@ class AStar(PlanerBase):
                         newPos[j] += v
                         if not self._inLimits(newPos):
                             continue
-                        try:
-                            # Do not do reopening! If node already in graph do not add it... Concequences?
-                            self.graph.nodes[self._getNodeID(newPos)]
-                            continue
-                        except:
-                            pass
+                        
+                        newNodeID = self._getNodeID(newPos)
+                        if newNodeID in self.graph.nodes:
+                            if self.reopen:
+                                newPosOldG = self.graph.nodes[newNodeID]["g"]
+                                
+                                node = self.graph.nodes[nodeName]
+                                pos1 = np.array(node["pos"])
+                                pos2 = np.array(newPos)
+                                distance = np.linalg.norm(pos1 - pos2)
 
-                        self._addGraphNode(newPos,nodeName)
+                                tentativeGScore = node["g"] + distance
+
+                                if tentativeGScore < newPosOldG:
+                                    self.graph.remove_edges_from(list(self.graph.out_edges(newNodeID)))
+                                    self._addGraphNode(newPos, nodeName, replaceInOpen=True)
+                        else:
+                            self._addGraphNode(newPos,nodeName)
 
         return result
 

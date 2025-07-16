@@ -209,6 +209,8 @@ class AStar(PlanerBase):
         node = self.graph.nodes[nodeName]
         for i in range(len(node["pos"])):
           for j in range(len(node["pos"])):
+              if i == j:
+                  continue
               discretization_step_u = discretization_steps[i]
               discretization_step_v = discretization_steps[j]
               for u in [-discretization_step_u, discretization_step_u]:

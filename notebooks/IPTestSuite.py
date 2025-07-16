@@ -16,7 +16,7 @@ import numpy as np
 
 benchList = list()
 
-# -----------------------------------------
+"""# -----------------------------------------
 trapField = dict()
 trapField["obs1"] =   LineString([(6, 18), (6, 8), (16, 8), (16,18)]).buffer(1.0)
 description = "Following the direct connection from goal to start would lead the algorithm into a trap."
@@ -52,3 +52,29 @@ myField["Antenna_Head_R"] = Point(8.5, 16).buffer(1)
 myField["Rob_Head"] = Polygon([(2, 13), (2, 8), (8, 8), (8, 13)])
 description = "Planer has to find a passage past a robot head and the print of the LTC."
 benchList.append(Benchmark("MyField", CollisionChecker(myField), [[4,21]], [[18,1]], description, 2))
+
+# -----------------------------------------"""
+
+layers = 9
+offset = layers + 3
+maze = dict()
+for i in range(1, layers):
+    if i % 2 == 1:
+        maze["ring_wall"+str(i)] = LineString([(offset + 1, offset - i),
+                                               (offset + i, offset - i),
+                                               (offset + i, offset + i),
+                                               (offset - i, offset + i),
+                                               (offset - i, offset - i),
+                                               (offset - 1, offset - i)]).buffer(0.2)
+        if i > 1:
+            maze["divider"+str(i)] = LineString([(offset + i, offset), (offset + i - 1, offset)]).buffer(0.2)
+    else:
+        maze["ring_wall"+str(i)] = LineString([(offset + 1, offset + i),
+                                               (offset + i, offset + i),
+                                               (offset + i, offset - i),
+                                               (offset - i, offset - i),
+                                               (offset - i, offset + i),
+                                               (offset - 1, offset + i)]).buffer(0.2)
+        maze["divider"+str(i)] = LineString([(offset - i, offset), (offset + 1 - i, offset)]).buffer(0.2)
+description = "Planer has to find a passage out of the maze"
+benchList.append(Benchmark("Maze", CollisionChecker(maze), [[offset, offset]], [[offset, offset + layers + 1]], description, 5))

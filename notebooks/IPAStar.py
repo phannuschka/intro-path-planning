@@ -19,6 +19,7 @@ from scipy.spatial.distance import euclidean, cityblock
 from IPPlanerBase import PlanerBase
 
 from IPPerfMonitor import IPPerfMonitor
+from notebooks.IPEnvironment import CollisionChecker
 
 
 class AStar(PlanerBase):
@@ -38,6 +39,8 @@ class AStar(PlanerBase):
 
         self.dof = None
         self.discretization = None
+
+        self.check_connection = False
 
         self.w = 0.5  
         return
@@ -70,6 +73,8 @@ class AStar(PlanerBase):
         self.reopen = config["reopen"]
         self._setLimits(config["lowLimits"], config["highLimits"])
 
+        self.check_connection = config["check_connection"]
+
         # compute discretization steps for each dim
         discretization_steps = [0] * self.dof
         for i in range(self.dof):
@@ -101,18 +106,27 @@ class AStar(PlanerBase):
               currentBest = self.graph.nodes[currentBestName]
 
               if self._isNeighbour(currentBest["pos"], self.goal, discretization_steps):
-                # TODO: check whether path is in collision
-                self.solutionPath = []
-                self._addGraphNode(self.goal, currentBestName)
-                self._collectPath( self._getNodeID(self.goal), self.solutionPath )
-                self.goalFound = True
-                break
+                if not self._collisionChecker.lineInCollision(currentBest["pos"], self.goal):
+                    self.solutionPath = []
+                    self._addGraphNode(self.goal, currentBestName)
+                    self._collectPath( self._getNodeID(self.goal), self.solutionPath )
+                    self.goalFound = True
+                    break
 
               currentBest["status"]= 'closed'
               if self._collisionChecker.pointInCollision(currentBest["pos"]):
                 currentBest['collision']= 1
                 currentBestName = self._getBestNodeName()
                 continue
+              if self.check_connection:
+                  fathers = list(self.graph.successors(currentBestName))
+                  if len(fathers) == 1:
+                      # Note: check the segment from currentBest to parent for collision
+                      if self._collisionChecker.lineInCollision(currentBest["pos"], self.graph.nodes[fathers[0]]['pos']):
+                            print("Collision detected in connection to parent")
+                            currentBest['collision'] = 1
+                            currentBestName = self._getBestNodeName()
+                            continue
               self.graph.nodes[currentBestName]['collision'] = 0
 
               # handleNode merges with former expandNode
@@ -124,7 +138,7 @@ class AStar(PlanerBase):
             else:
                 return None
         except Exception as e:
-            print("Planning failed: ", e)
+            print("Planning failed:", e)
             return None
 
     def _isNeighbour(self, pos1, pos2, discretization_steps: List[float]) -> bool:
@@ -212,6 +226,8 @@ class AStar(PlanerBase):
         node = self.graph.nodes[nodeName]
         for i in range(len(node["pos"])):
           for j in range(len(node["pos"])):
+              if i == j:
+                  continue
               discretization_step_u = discretization_steps[i]
               discretization_step_v = discretization_steps[j]
               for u in [-discretization_step_u, discretization_step_u]:

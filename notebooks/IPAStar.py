@@ -19,7 +19,6 @@ from scipy.spatial.distance import euclidean, cityblock
 from IPPlanerBase import PlanerBase
 
 from IPPerfMonitor import IPPerfMonitor
-from notebooks.IPEnvironment import CollisionChecker
 
 
 class AStar(PlanerBase):

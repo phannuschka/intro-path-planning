@@ -124,6 +124,7 @@ class AStar(PlanerBase):
                       if self._collisionChecker.lineInCollision(currentBest["pos"], self.graph.nodes[fathers[0]]['pos']):
                             print("Collision detected in connection to parent")
                             currentBest['collision'] = 1
+                            self.graph.nodes[currentBestName]["g"] = float('inf')
                             currentBestName = self._getBestNodeName()
                             continue
               self.graph.nodes[currentBestName]['collision'] = 0

@@ -54,7 +54,7 @@ def evaluate(configs: List[Dict]):
 
             # save stats
             dir_name = f"{script_dir}/results/{benchmark.name}"
-            dir_name = f"{dir_name}/disc{config["discretization"]}_{config["heuristic"]}_w{config["w"]}"
+            dir_name = f"{dir_name}/disc{config['discretization']}_{config['heuristic']}_w{config['w']}"
             if config["reopen"]:
                 dir_name += "_reopen"
             if config["check_connection"]:
@@ -88,6 +88,7 @@ if __name__ == "__main__":
     astarConfig["dof"] = 2
     astarConfig["discretization"] = [50 for _ in range(astarConfig["dof"])]
     astarConfig["check_connection"] = True
+    astarConfig["lazy_check_connection"] = False
 
     configs = []
     configs.append(astarConfig)

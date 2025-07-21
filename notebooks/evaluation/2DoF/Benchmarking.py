@@ -28,50 +28,50 @@ configs = []
 configs.append(astarConfig)
 
 for benchmark in ts.benchList:
+    print(benchmark.name)
     for config in configs:
-        try:
-            benchmark: Benchmark
-            # Note: for 2 DOF and workspace = configuration space
-            config["lowLimits"] = [limit[0] for limit in benchmark.collisionChecker.getEnvironmentLimits()]
-            config["highLimits"] = [limit[1] for limit in benchmark.collisionChecker.getEnvironmentLimits()]
+        benchmark: Benchmark
+        # Note: for 2 DOF and workspace = configuration space
+        config["lowLimits"] = [limit[0] for limit in benchmark.collisionChecker.getEnvironmentLimits()]
+        config["highLimits"] = [limit[1] for limit in benchmark.collisionChecker.getEnvironmentLimits()]
 
 
-            fig_local = plt.figure(figsize=(10,10))
-            ax = fig_local.add_subplot(1,1,1)
-            astar = AStar(benchmark.collisionChecker)
+        fig_local = plt.figure(figsize=(10,10))
+        ax = fig_local.add_subplot(1,1,1)
+        astar = AStar(benchmark.collisionChecker)
 
-            stats = {}
-            title = benchmark.name
+        stats = {}
+        title = benchmark.name
+        
+        start = time.time()
+        solution, animation_info = astar.planPath(benchmark.startList, benchmark.goalList, astarConfig)
+        stats["execution_time"] = time.time() - start
+
+        stats["road_map_size"] = len(astar.graph.nodes.keys())
+
+        stats["num_nodes_solution_path"] = -1
+
+        stats["solution_path_length"] = -1
+        
+        if solution != []:
+            stats["num_nodes_solution_path"] = len(solution)
             
-            start = time.time()
-            solution = astar.planPath(benchmark.startList, benchmark.goalList, astarConfig)
-            stats["execution_time"] = time.time() - start
+            stats["solution_path_length"] = astar.graph.nodes[solution[-1]]["g"]
 
-            stats["road_map_size"] = len(astar.graph.nodes.keys())
+            title += " (No path found!)"
 
-            stats["num_nodes_solution_path"] = -1
+        # save stats
+        dirname = f"{script_dir}/results/{benchmark.name}"
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        filename = f"{dirname}/disc{astarConfig["discretization"]}_{astarConfig["heuristic"]}_w{astarConfig["w"]}"
+        if astarConfig["reopen"]:
+            filename += "_reopen"
+        if astarConfig["check_connection"]:
+            filename += "_linetest"
+        filename += ".json"
+        with open(filename, "w") as f:
+            json.dump(stats, f)
 
-            stats["solution_path_length"] = -1
-            
-            if solution != []:
-                stats["num_nodes_solution_path"] = len(solution)
-
-                stats["solution_path_length"] = astar.graph.nodes[solution[-1]]["g"]
-
-                title += " (No path found!)"
-
-            # save stats
-            dirname = f"{script_dir}/results/{benchmark.name}"
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
-            filename = f"{dirname}/disc{astarConfig["discretization"]}_{astarConfig["heuristic"]}_w{astarConfig["w"]}"
-            if astarConfig["reopen"]:
-                filename += "_reopen"
-            if astarConfig["check_connection"]:
-                filename += "_linetest"
-            filename += ".json"
-            with open(filename, "w") as f:
-                json.dump(stats, f)
-
-        except Exception as e:
-            print("ERROR: ",benchmark.name, e)
+        # except Exception as e:
+        #     print("ERROR: ",benchmark.name, e)

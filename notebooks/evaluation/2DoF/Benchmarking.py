@@ -15,6 +15,7 @@ from IPVISAStar import aStarVisualize
 from IPPerfMonitor import IPPerfMonitor
 import time
 import json
+import networkx as nx
 
 astarConfig = dict()
 astarConfig["w"] = .5
@@ -44,7 +45,7 @@ for benchmark in ts.benchList:
         title = benchmark.name
         
         start = time.time()
-        solution, deltas = astar.planPath(benchmark.startList, benchmark.goalList, astarConfig)
+        solution, deltas = astar.planPath(benchmark.startList, benchmark.goalList, astarConfig, store_viz=True)
         stats["execution_time"] = time.time() - start
 
         stats["road_map_size"] = len(astar.graph.nodes.keys())
@@ -61,16 +62,26 @@ for benchmark in ts.benchList:
             title += " (No path found!)"
 
         # save stats
-        dirname = f"{script_dir}/results/{benchmark.name}"
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        filename = f"{dirname}/disc{astarConfig["discretization"]}_{astarConfig["heuristic"]}_w{astarConfig["w"]}"
+        dir_name = f"{script_dir}/results/{benchmark.name}"
+        dir_name = f"{dir_name}/disc{astarConfig["discretization"]}_{astarConfig["heuristic"]}_w{astarConfig["w"]}"
         if astarConfig["reopen"]:
-            filename += "_reopen"
+            dir_name += "_reopen"
         if astarConfig["check_connection"]:
-            filename += "_linetest"
-        filename += ".json"
-        with open(filename, "w") as f:
+            dir_name += "_linetest"
+
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+
+        stats_filename = f"{dir_name}/stats.json"
+        with open(stats_filename, "w") as f:
             json.dump(stats, f)
+
+        deltas_filename = f"{dir_name}/deltas.json"
+        with open(deltas_filename, "w") as f:
+            json.dump(deltas, f)
+        
+        graph_filename = f"{dir_name}/graph.json"
+        with open(graph_filename, "w") as f:
+            json.dump(nx.node_link_data(astar.graph), f)
 
         

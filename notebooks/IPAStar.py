@@ -147,7 +147,7 @@ class AStar(PlanerBase):
             if self.goalFound:
                 return self.solutionPath, graphs
             else:
-                return None
+                return None, []
         except Exception as e:
             print("Planning failed:", e)
             return None, []

@@ -44,7 +44,7 @@ for benchmark in ts.benchList:
         title = benchmark.name
         
         start = time.time()
-        solution, animation_info = astar.planPath(benchmark.startList, benchmark.goalList, astarConfig)
+        solution, deltas = astar.planPath(benchmark.startList, benchmark.goalList, astarConfig)
         stats["execution_time"] = time.time() - start
 
         stats["road_map_size"] = len(astar.graph.nodes.keys())
@@ -53,7 +53,7 @@ for benchmark in ts.benchList:
 
         stats["solution_path_length"] = -1
         
-        if solution != []:
+        if solution is not None:
             stats["num_nodes_solution_path"] = len(solution)
             
             stats["solution_path_length"] = astar.graph.nodes[solution[-1]]["g"]
@@ -73,5 +73,4 @@ for benchmark in ts.benchList:
         with open(filename, "w") as f:
             json.dump(stats, f)
 
-        # except Exception as e:
-        #     print("ERROR: ",benchmark.name, e)
+        

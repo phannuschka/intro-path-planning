@@ -76,6 +76,7 @@ class AStar(PlanerBase):
                 'current_best': True,
                 'collision': node_data['collision'],
                 'line_collision': node_data['line_collision'],
+                'status': node_data['status'],
             })
         elif action_type == 'add_edge':
             delta.update({
@@ -168,10 +169,9 @@ class AStar(PlanerBase):
               currentBest["status"]= 'closed'
               if self._collisionChecker.pointInCollision(currentBest["pos"]):
                 currentBest['collision']= 1
-                currentBestName = self._getBestNodeName()
-
                 if self.store_viz:
                     self._store_iteration_delta('close_node', currentBestName, currentBest)
+                currentBestName = self._getBestNodeName()
 
                 continue
 

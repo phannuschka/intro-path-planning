@@ -600,42 +600,110 @@ def aStarVisualizeIncrementalOpenCV(planner, solution, deltas, output_dir="steps
 
         for delta in deltas_iteration:
             action = delta['action_type']
-            if action in ['add_node', 'update_node', 'close_node']:
-                node = delta['node_name']
-                if node in pos and node not in drawn_nodes:
-                    px, py = to_pixel(pos[node])
-                    node_data = graph.nodes[node]
-                    color = (0, 0, 0)
-                    radius = 10
 
-                    if node_data.get('collision', 0) == 1:
+            if action == 'add_node':
+                node_name = delta['node_name']
+                status = delta.get('status', None)
+                if node_name in pos and status is not None:
+                    if delta.get('collision', 0) == 1:
                         color = (0, 0, 255)
-                    elif node_data.get('line_collision', 0) == 1:
+                    elif delta.get('line_collision', 0) == 1:
                         color = (0, 165, 255)
-                    elif node_data.get('status') == 'closed':
+                    elif status == 'closed':
                         color = (255, 0, 0)
-                        radius = 10
-                    elif node_data.get('status') == 'open':
-                        color = (0, 255, 0)
+                    elif status == 'open':
+                        color = (255, 200, 200)
+                    else:
+                        color = (0, 0, 0)
 
-                    cv2.circle(frame, (px, py), radius, color, -1)
-                    drawn_nodes.add(node)
+                    px, py = to_pixel(pos[node_name])
+                    cv2.circle(frame, (px, py), 10, color, -1)
+                    drawn_nodes.add(node_name)
+
+            elif action == 'update_node':
+                node_name = delta['node_name']
+                status = delta.get('status', None)
+                if node_name in pos and status is not None:
+                    if delta.get('collision', 0) == 1:
+                        color = (0, 0, 255)
+                    elif delta.get('line_collision', 0) == 1:
+                        color = (0, 165, 255)
+                    elif status == 'closed':
+                        color = (255, 0, 0)
+                    elif status == 'open':
+                        color = (255, 200, 200)
+                    else:
+                        color = (0, 0, 0)
+
+                    px, py = to_pixel(pos[node_name])
+                    cv2.circle(frame, (px, py), 10, color, -1)
+                    drawn_nodes.add(node_name)
+
+            elif action == 'close_node':
+                node_name = delta['node_name']
+                status = delta.get('status', None)
+                if node_name in pos and status is not None:
+                    if delta.get('collision', 0) == 1:
+                        color = (0, 0, 255)
+                    elif delta.get('line_collision', 0) == 1:
+                        color = (0, 165, 255)
+                    elif status == 'closed':
+                        color = (255, 0, 0)
+                    elif status == 'open':
+                        color = (255, 200, 200)
+                    else:
+                        color = (0, 0, 0)
+
+                    px, py = to_pixel(pos[node_name])
+                    cv2.circle(frame, (px, py), 10, color, -1)
+                    drawn_nodes.add(node_name)
+                else:
+                    print(f"Node {node_name} not found in position dictionary or no status available.")
+                    print(f"delta: {delta}")
 
             elif action == 'add_edge':
                 n1 = delta['from_node']
                 n2 = delta['to_node']
                 edge = (n1, n2)
-                if n1 in pos and n2 in pos and edge not in drawn_edges:
+                if n1 in pos and n2 in pos:
                     p1 = to_pixel(pos[n1])
                     p2 = to_pixel(pos[n2])
-                    # cv2.line(frame, p1, p2, (200, 200, 200), 1)
                     draw_arrow(frame, p1, p2)
                     drawn_edges.add(edge)
+
+            elif action == 'remove_edge':
+                n1 = delta['from_node']
+                n2 = delta['to_node']
+                edge = (n1, n2)
+                if n1 in pos and n2 in pos:
+                    p1 = to_pixel(pos[n1])
+                    p2 = to_pixel(pos[n2])
+                    draw_arrow(frame, p1, p2, color=(0, 0, 255))
+                    drawn_edges.add(edge)
+
+            else:
+                print(f"Unknown action type: {action}")
+
+
 
         # Copy frame for this iteration so we can add text without modifying original
         frame_with_text = frame.copy()
         cv2.putText(frame_with_text, f"Iteration: {iteration}", (10, 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (30, 30, 30), 2)
+
+        # draw solution path if last iteration
+        if i == len(deltas):
+            for j, node in enumerate(solution):
+                if node in pos:
+                    px, py = to_pixel(pos[node])
+                    cv2.circle(frame_with_text, (px, py), 15, (0, 255, 0), -1)
+                    # draw edge as line
+                    if j < len(solution) - 1:
+                        next_node = solution[j + 1]
+                        if next_node in pos:
+                            next_px, next_py = to_pixel(pos[next_node])
+                            cv2.line(frame_with_text, (px, py), (next_px, next_py), (0, 255, 0), 10)
+
 
         cv2.imwrite(f"{output_dir}/step_{iteration:03d}.jpg", frame_with_text)
 

@@ -205,7 +205,7 @@ class AStar(PlanerBase):
                 return None
         except Exception as e:
             print("Planning failed:", e)
-            return None
+            return None, []
 
     def _isNeighbour(self, pos1, pos2, discretization_steps: List[float]) -> bool:
         """Check whether two positions are within 1 discretization step in each dimension"""

@@ -44,16 +44,20 @@ class AStar(PlanerBase):
         self.w = 0.5  
         return
 
-    def _getNodeID(self,pos):
+    def _getNodeID(self, pos):
         """Compute a unique identifier based on the position"""
+        pos_a = np.array(pos)
+        start = np.array(self.start)
+        pos_a = pos_a - start
+        pos_a = np.round(pos_a / np.array(self.discretization_steps)).astype(int)
 
         nodeId = "-"
-        for i in pos:
+        for i in pos_a:
             nodeId += str(i)+"-"
         return nodeId
 
     @IPPerfMonitor
-    def planPath(self, startList, goalList, config):
+    def planPath(self, startList, goalList, config, store_viz=False):
         """
 
         Args:
@@ -76,12 +80,14 @@ class AStar(PlanerBase):
 
         # compute discretization steps for each dim
         discretization_steps = [0] * self.dof
+        self.discretization_steps = discretization_steps
         for i in range(self.dof):
             axis_length = self.limits[i][1] - self.limits[i][0]
             discretization_steps[i] = axis_length / self.discretization[i]
 
         # 0. reset
         self.graph.clear()
+        graphs = [copy.deepcopy(self.graph)] if store_viz else []
 
         try:
             # 1. check start and goal whether collision free (s. BaseClass)
@@ -92,6 +98,7 @@ class AStar(PlanerBase):
             self.heuristic = config["heuristic"]
 
             self.goal = checkedGoalList[0]
+            self.start = checkedStartList[0]
             self._addGraphNode(checkedStartList[0])
 
             currentBestName = self._getBestNodeName()
@@ -103,13 +110,17 @@ class AStar(PlanerBase):
               breakNumber += 1
 
               currentBest = self.graph.nodes[currentBestName]
+              if store_viz:
+                graphs.append(copy.deepcopy(self.graph))
 
               if self._isNeighbour(currentBest["pos"], self.goal, discretization_steps):
                 if not self._collisionChecker.lineInCollision(currentBest["pos"], self.goal):
                     self.solutionPath = []
-                    self._addGraphNode(self.goal, currentBestName)
-                    self._collectPath( self._getNodeID(self.goal), self.solutionPath )
+                    self._addGraphNode(self.goal, currentBestName, name="goal")
+                    self._collectPath( "goal", self.solutionPath )
                     self.goalFound = True
+                    if store_viz:
+                        graphs.append(copy.deepcopy(self.graph))
                     break
 
               currentBest["status"]= 'closed'
@@ -122,9 +133,9 @@ class AStar(PlanerBase):
                   if len(fathers) == 1:
                       # Note: check the segment from currentBest to parent for collision
                       if self._collisionChecker.lineInCollision(currentBest["pos"], self.graph.nodes[fathers[0]]['pos']):
-                            print("Collision detected in connection to parent")
-                            currentBest['collision'] = 1
+                            # currentBest['collision'] = 1
                             self.graph.nodes[currentBestName]["g"] = float('inf')
+                            print("line in collision, removing node:", currentBestName)
                             currentBestName = self._getBestNodeName()
                             continue
               self.graph.nodes[currentBestName]['collision'] = 0
@@ -134,7 +145,7 @@ class AStar(PlanerBase):
               currentBestName = self._getBestNodeName()
 
             if self.goalFound:
-                return self.solutionPath
+                return self.solutionPath, graphs
             else:
                 return None
         except Exception as e:
@@ -154,24 +165,30 @@ class AStar(PlanerBase):
         heapq.heappush(self.openList,(self._evaluateNode(nodeName),nodeName))
 
     @IPPerfMonitor
-    def _addGraphNode(self, pos, fatherName=None, replaceInOpen=False):
+    def _addGraphNode(self, pos, fatherName=None, replaceInOpen=False, name=None):
         """Add a node based on the position into the graph. Attention: Existing node is overwritten!"""
-        self.graph.add_node(self._getNodeID(pos), pos=pos, status='open', g=0)
+        # if fatherName is not None:
+        #     if self.check_connection:
+        #         # Note: check the segment from currentBest to parent for collision
+        #         if self._collisionChecker.lineInCollision(pos, self.graph.nodes[fatherName]['pos']):
+        #               return
+        nodeName = name if name is not None else self._getNodeID(pos)
+        self.graph.add_node(nodeName, pos=pos, status='open', g=0, collision=0)
 
         if fatherName != None:
-            self.graph.add_edge(self._getNodeID(pos), fatherName)
+            self.graph.add_edge(nodeName, fatherName)
             pos1 = np.array(pos)
             pos2 = np.array(self.graph.nodes[fatherName]["pos"])
             distance = np.linalg.norm(pos1 - pos2)
-            self.graph.nodes[self._getNodeID(pos)]["g"] = self.graph.nodes[fatherName]["g"] + distance
+            self.graph.nodes[nodeName]["g"] = self.graph.nodes[fatherName]["g"] + distance
 
         if replaceInOpen:
             keys = list(map(lambda x: x[1], self.openList))
-            if self._getNodeID(pos) in keys:
-                idx = keys.index(self._getNodeID(pos))
+            if nodeName in keys:
+                idx = keys.index(nodeName)
                 del self.openList[idx]
 
-        self._insertNodeNameInOpenList(self._getNodeID(pos))
+        self._insertNodeNameInOpenList(nodeName)
 
    
     def _setLimits(self, lowLimit, highLimit):
@@ -198,12 +215,12 @@ class AStar(PlanerBase):
                     newPos[i] += u
                     if not self._inLimits(newPos):
                         continue
-                    
+
                     newNodeID = self._getNodeID(newPos)
                     if newNodeID in self.graph.nodes:
                         if self.reopen:
                             newPosOldG = self.graph.nodes[newNodeID]["g"]
-                            
+
                             node = self.graph.nodes[nodeName]
                             pos1 = np.array(node["pos"])
                             pos2 = np.array(newPos)
@@ -212,6 +229,7 @@ class AStar(PlanerBase):
                             tentativeGScore = node["g"] + distance
 
                             if tentativeGScore < newPosOldG:
+                                print("reopening node:", newNodeID, "with g=", tentativeGScore, "old g=", newPosOldG)
                                 self.graph.remove_edges_from(list(self.graph.out_edges(newNodeID)))
                                 self._addGraphNode(newPos,nodeName, replaceInOpen=True)
                     else:

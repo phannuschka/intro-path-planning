@@ -13,12 +13,11 @@ from typing import List
 import copy
 import networkx as nx
 import heapq
-import math
 import numpy as np
-from dataclasses import dataclass
-from scipy.spatial.distance import euclidean, cityblock
-from IPPlanerBase import PlanerBase
 
+from scipy.spatial.distance import euclidean, cityblock
+
+from IPPlanerBase import PlanerBase
 from IPPerfMonitor import IPPerfMonitor
 
 
@@ -32,21 +31,28 @@ class AStar(PlanerBase):
         self.graph = nx.DiGraph() # = CloseList
         self.openList = [] # (<value>, <node>)
 
+        self.start = []
         self.goal      =  []
         self.goalFound = False
+        self.solutionPath = []
 
         self.limits = self._collisionChecker.getEnvironmentLimits()
 
         self.dof = None
         self.discretization = None
+        self.discretization_steps = None
 
         self.check_connection = False
+        self.lazy_check_connection = False
+        self.reopen = False
 
         self.iteration = 0
 
         self.w = 0.5
+        self.heuristic = None
 
-        self.deltas = []
+        self.deltas = []  # for visualization purposes
+        self.store_viz = False
 
         return
 
@@ -73,7 +79,6 @@ class AStar(PlanerBase):
         elif action_type == 'close_node':
             delta.update({
                 'node_name': node_name,
-                'current_best': True,
                 'collision': node_data['collision'],
                 'line_collision': node_data['line_collision'],
                 'status': node_data['status'],
@@ -93,6 +98,8 @@ class AStar(PlanerBase):
 
     def _getNodeID(self, pos):
         """Compute a unique identifier based on the position"""
+        # we cannot take the position directly as node name, because of floating point precision issues
+        # instead we discretize the position based on the discretization steps
         pos_a = np.array(pos)
         start = np.array(self.start)
         pos_a = pos_a - start
@@ -123,6 +130,7 @@ class AStar(PlanerBase):
         self.reopen = config["reopen"]
         self._setLimits(config["lowLimits"], config["highLimits"])
         self.check_connection = config["check_connection"]
+        self.lazy_check_connection = config.get("lazy_check_connection", False)
         self.store_viz = store_viz
 
         # compute discretization steps for each dim
@@ -148,20 +156,17 @@ class AStar(PlanerBase):
             self._addGraphNode(checkedStartList[0])
 
             currentBestName = self._getBestNodeName()
-            breakNumber = 0
+            self.iteration = 0
             while currentBestName:
-              # if breakNumber > 1000:
-              #   break
-              self.iteration = breakNumber
-              breakNumber += 1
+              self.iteration += 1
 
               currentBest = self.graph.nodes[currentBestName]
 
+              # Note: we start the grid search from start position,s o it is always included in the graph
+              # for goal, we check whether it is a neighbour (closer than a discretization step) of the current best node
               if self._isNeighbour(currentBest["pos"], self.goal, discretization_steps):
                 if not self._collisionChecker.lineInCollision(currentBest["pos"], self.goal):
-                    self.solutionPath = []
                     self._addGraphNode(self.goal, currentBestName, name="goal")
-
                     self._collectPath( "goal", self.solutionPath )
                     self.goalFound = True
                     break
@@ -172,24 +177,21 @@ class AStar(PlanerBase):
                 if self.store_viz:
                     self._store_iteration_delta('close_node', currentBestName, currentBest)
                 currentBestName = self._getBestNodeName()
-
                 continue
 
-              if self.check_connection:
+              # Note: check the segment from currentBest to parent for collision
+              # doing it this late looses optimality, even with reopening
+              if self.check_connection and self.lazy_check_connection:
                   fathers = list(self.graph.successors(currentBestName))
                   if len(fathers) == 1:
-                      # Note: check the segment from currentBest to parent for collision
                       if self._collisionChecker.lineInCollision(currentBest["pos"], self.graph.nodes[fathers[0]]['pos']):
                             currentBest['line_collision'] = 1
                             self.graph.nodes[currentBestName]["g"] = float('inf')
-                            print("line in collision, removing node:", currentBestName)
-
                             if self.store_viz:
                                 self._store_iteration_delta('close_node', currentBestName, currentBest)
-
                             currentBestName = self._getBestNodeName()
-
                             continue
+
               self.graph.nodes[currentBestName]['collision'] = 0
 
               if self.store_viz:
@@ -245,7 +247,7 @@ class AStar(PlanerBase):
                 self._store_iteration_delta('add_edge', edge_data={'from_node': fatherName, 'to_node': nodeName})
                 self._store_iteration_delta('update_node', node_name=nodeName, node_data=self.graph.nodes[nodeName])
 
-        if replaceInOpen:
+        if replaceInOpen:  # for reopening we have to remove the node from the open list to avoid duplicates
             keys = list(map(lambda x: x[1], self.openList))
             if nodeName in keys:
                 idx = keys.index(nodeName)
@@ -279,19 +281,20 @@ class AStar(PlanerBase):
                     if not self._inLimits(newPos):
                         continue
 
+                    if self.check_connection and not self.lazy_check_connection:  # do not add nodes not reachable from the current node
+                        if self._collisionChecker.lineInCollision(node["pos"], newPos):
+                            continue
+
                     newNodeID = self._getNodeID(newPos)
                     if newNodeID in self.graph.nodes:
                         if self.reopen:
                             newPosOldG = self.graph.nodes[newNodeID]["g"]
 
                             node = self.graph.nodes[nodeName]
-                            pos1 = np.array(node["pos"])
-                            pos2 = np.array(newPos)
-                            distance = np.linalg.norm(pos1 - pos2)
+                            tentativeGScore = node["g"] + discretization_step
 
-                            tentativeGScore = node["g"] + distance
-
-                            if tentativeGScore < newPosOldG:
+                            # reopening of nodes if the new g value is smaller than the old one (avoid numerical issues)
+                            if tentativeGScore < newPosOldG and abs(tentativeGScore - newPosOldG) > 0.5 * discretization_step:
                                 print("reopening node:", newNodeID, "with g=", tentativeGScore, "old g=", newPosOldG)
 
                                 if self.store_viz:
@@ -299,12 +302,10 @@ class AStar(PlanerBase):
                                     if len(edges) > 0:
                                         for edge in edges:
                                             self._store_iteration_delta('remove_edge', edge_data={'from_node': edge[1], 'to_node': edge[0]})
-
                                 self.graph.remove_edges_from(list(self.graph.out_edges(newNodeID)))
                                 self._addGraphNode(newPos,nodeName, replaceInOpen=True)
                     else:
                         self._addGraphNode(newPos,nodeName)
-
         return result
 
     @IPPerfMonitor
@@ -338,7 +339,19 @@ class AStar(PlanerBase):
 
                                 tentativeGScore = node["g"] + distance
 
-                                if tentativeGScore < newPosOldG:
+                                # reopening of nodes if the new g value is smaller than the old one (avoid numerical issues)
+                                if tentativeGScore < newPosOldG and (
+                                        abs(tentativeGScore - newPosOldG) > 0.5 * discretization_step_u or
+                                        abs(tentativeGScore - newPosOldG) > 0.5 * discretization_step_v):
+                                    print("reopening node:", newNodeID, "with g=", tentativeGScore, "old g=", newPosOldG)
+
+                                    if self.store_viz:
+                                        edges = self.graph.out_edges(newNodeID)
+                                        if len(edges) > 0:
+                                            for edge in edges:
+                                                self._store_iteration_delta('remove_edge',
+                                                                            edge_data={'from_node': edge[1],
+                                                                                       'to_node': edge[0]})
                                     self.graph.remove_edges_from(list(self.graph.out_edges(newNodeID)))
                                     self._addGraphNode(newPos, nodeName, replaceInOpen=True)
                         else:
@@ -349,9 +362,7 @@ class AStar(PlanerBase):
 
     @IPPerfMonitor
     def _computeHeuristicValue(self, nodeName):
-        """ Computes Heuristic Value: Manhattan Distance """
-
-        result = 0
+        """ Computes Heuristic Value: Eucclidean or Manhattan Distance """
         node = self.graph.nodes[nodeName]
         if self.heuristic == "euclidean":
             return euclidean(self.goal, node["pos"])
@@ -365,7 +376,6 @@ class AStar(PlanerBase):
 
                       
     def _collectPath(self, nodeName, solutionPath):
-
       fathers = list(self.graph.successors(nodeName))
       if len(fathers) == 1:
         self._collectPath( fathers[0], solutionPath )
@@ -383,7 +393,7 @@ class AStar(PlanerBase):
         for i, limit in enumerate(self.limits):
           if pos[i] < limit[0] or pos[i] > limit[1]:
             result = False
-            break;
+            break
         return result
 
 

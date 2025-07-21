@@ -75,6 +75,10 @@ def evaluate(configs: List[Dict]):
             with open(graph_filename, "w") as f:
                 json.dump(nx.node_link_data(astar.graph), f)
 
+            solution_filename = f"{dir_name}/solution.json"
+            with open(solution_filename, "w") as f:
+                json.dump(solution, f)
+
 
 if __name__ == "__main__":
     astarConfig = dict()

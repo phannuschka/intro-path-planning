@@ -15,6 +15,7 @@ import networkx as nx
 import heapq
 import math
 import numpy as np
+from dataclasses import dataclass
 from scipy.spatial.distance import euclidean, cityblock
 from IPPlanerBase import PlanerBase
 
@@ -41,8 +42,53 @@ class AStar(PlanerBase):
 
         self.check_connection = False
 
-        self.w = 0.5  
+        self.iteration = 0
+
+        self.w = 0.5
+
+        self.deltas = []
+
         return
+
+    def _store_iteration_delta(self, action_type, node_name=None, node_data=None, edge_data=None):
+        """Store the iteration delta for visualization purposes."""
+        delta = {
+            'iteration': self.iteration,
+            'action_type': action_type,
+        }
+        if action_type == 'add_node':
+            delta.update({
+                'node_name': node_name,
+                'g': node_data['g'],
+                'status': node_data['status'],
+            })
+        elif action_type == 'update_node':
+            delta.update({
+                'node_name': node_name,
+                'g': node_data['g'],
+                'status': node_data['status'],
+                'collision': node_data['collision'],
+                'line_collision': node_data['line_collision'],
+            })
+        elif action_type == 'close_node':
+            delta.update({
+                'node_name': node_name,
+                'current_best': True,
+                'collision': node_data['collision'],
+                'line_collision': node_data['line_collision'],
+            })
+        elif action_type == 'add_edge':
+            delta.update({
+                'from_node': edge_data['from_node'],
+                'to_node': edge_data['to_node'],
+            })
+        elif action_type == 'remove_edge':
+            delta.update({
+                'from_node': edge_data['from_node'],
+                'to_node': edge_data['to_node'],
+            })
+
+        self.deltas.append(delta)
 
     def _getNodeID(self, pos):
         """Compute a unique identifier based on the position"""
@@ -75,8 +121,8 @@ class AStar(PlanerBase):
         self.discretization = config["discretization"]
         self.reopen = config["reopen"]
         self._setLimits(config["lowLimits"], config["highLimits"])
-
         self.check_connection = config["check_connection"]
+        self.store_viz = store_viz
 
         # compute discretization steps for each dim
         discretization_steps = [0] * self.dof
@@ -87,7 +133,6 @@ class AStar(PlanerBase):
 
         # 0. reset
         self.graph.clear()
-        graphs = [copy.deepcopy(self.graph)] if store_viz else []
 
         try:
             # 1. check start and goal whether collision free (s. BaseClass)
@@ -106,46 +151,56 @@ class AStar(PlanerBase):
             while currentBestName:
               # if breakNumber > 1000:
               #   break
-
+              self.iteration = breakNumber
               breakNumber += 1
 
               currentBest = self.graph.nodes[currentBestName]
-              if store_viz:
-                graphs.append(copy.deepcopy(self.graph))
 
               if self._isNeighbour(currentBest["pos"], self.goal, discretization_steps):
                 if not self._collisionChecker.lineInCollision(currentBest["pos"], self.goal):
                     self.solutionPath = []
                     self._addGraphNode(self.goal, currentBestName, name="goal")
+
                     self._collectPath( "goal", self.solutionPath )
                     self.goalFound = True
-                    if store_viz:
-                        graphs.append(copy.deepcopy(self.graph))
                     break
 
               currentBest["status"]= 'closed'
               if self._collisionChecker.pointInCollision(currentBest["pos"]):
                 currentBest['collision']= 1
                 currentBestName = self._getBestNodeName()
+
+                if self.store_viz:
+                    self._store_iteration_delta('close_node', currentBestName, currentBest)
+
                 continue
+
               if self.check_connection:
                   fathers = list(self.graph.successors(currentBestName))
                   if len(fathers) == 1:
                       # Note: check the segment from currentBest to parent for collision
                       if self._collisionChecker.lineInCollision(currentBest["pos"], self.graph.nodes[fathers[0]]['pos']):
-                            # currentBest['collision'] = 1
+                            currentBest['line_collision'] = 1
                             self.graph.nodes[currentBestName]["g"] = float('inf')
                             print("line in collision, removing node:", currentBestName)
+
+                            if self.store_viz:
+                                self._store_iteration_delta('close_node', currentBestName, currentBest)
+
                             currentBestName = self._getBestNodeName()
+
                             continue
               self.graph.nodes[currentBestName]['collision'] = 0
+
+              if self.store_viz:
+                self._store_iteration_delta('close_node', currentBestName, currentBest)
 
               # handleNode merges with former expandNode
               self._handleNode(currentBestName, discretization_steps)
               currentBestName = self._getBestNodeName()
 
             if self.goalFound:
-                return self.solutionPath, graphs
+                return self.solutionPath, self.deltas
             else:
                 return None, []
         except Exception as e:
@@ -173,7 +228,11 @@ class AStar(PlanerBase):
         #         if self._collisionChecker.lineInCollision(pos, self.graph.nodes[fatherName]['pos']):
         #               return
         nodeName = name if name is not None else self._getNodeID(pos)
-        self.graph.add_node(nodeName, pos=pos, status='open', g=0, collision=0)
+        self.graph.add_node(nodeName, pos=pos, status='open', g=0, collision=0, line_collision=0)
+
+        if self.store_viz:
+            self._store_iteration_delta('add_node', node_name=nodeName, node_data=self.graph.nodes[nodeName])
+
 
         if fatherName != None:
             self.graph.add_edge(nodeName, fatherName)
@@ -181,6 +240,10 @@ class AStar(PlanerBase):
             pos2 = np.array(self.graph.nodes[fatherName]["pos"])
             distance = np.linalg.norm(pos1 - pos2)
             self.graph.nodes[nodeName]["g"] = self.graph.nodes[fatherName]["g"] + distance
+
+            if self.store_viz:
+                self._store_iteration_delta('add_edge', edge_data={'from_node': fatherName, 'to_node': nodeName})
+                self._store_iteration_delta('update_node', node_name=nodeName, node_data=self.graph.nodes[nodeName])
 
         if replaceInOpen:
             keys = list(map(lambda x: x[1], self.openList))
@@ -230,6 +293,13 @@ class AStar(PlanerBase):
 
                             if tentativeGScore < newPosOldG:
                                 print("reopening node:", newNodeID, "with g=", tentativeGScore, "old g=", newPosOldG)
+
+                                if self.store_viz:
+                                    edges = self.graph.out_edges(newNodeID)
+                                    if len(edges) > 0:
+                                        for edge in edges:
+                                            self._store_iteration_delta('remove_edge', edge_data={'from_node': edge[1], 'to_node': edge[0]})
+
                                 self.graph.remove_edges_from(list(self.graph.out_edges(newNodeID)))
                                 self._addGraphNode(newPos,nodeName, replaceInOpen=True)
                     else:

@@ -224,11 +224,6 @@ class AStar(PlanerBase):
     @IPPerfMonitor
     def _addGraphNode(self, pos, fatherName=None, replaceInOpen=False, name=None):
         """Add a node based on the position into the graph. Attention: Existing node is overwritten!"""
-        # if fatherName is not None:
-        #     if self.check_connection:
-        #         # Note: check the segment from currentBest to parent for collision
-        #         if self._collisionChecker.lineInCollision(pos, self.graph.nodes[fatherName]['pos']):
-        #               return
         nodeName = name if name is not None else self._getNodeID(pos)
         self.graph.add_node(nodeName, pos=pos, status='open', g=0, collision=0, line_collision=0)
 

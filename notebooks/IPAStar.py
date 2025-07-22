@@ -8,7 +8,7 @@ Remark: The code is a slightly modified version of AStar, whithout reopening of 
 
 License is based on Creative Commons: Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) (pls. check: http://creativecommons.org/licenses/by-nc/4.0/)
 """
-
+import time
 from typing import List
 import copy
 import networkx as nx
@@ -159,6 +159,8 @@ class AStar(PlanerBase):
             self.iteration = 0
             while currentBestName:
               self.iteration += 1
+              if self.iteration % 100 == 0:
+                print(f"Iteration {self.iteration}")
 
               currentBest = self.graph.nodes[currentBestName]
 

@@ -4,7 +4,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 notebooks_dir = os.path.join(script_dir, "..", "..")
 sys.path.append(os.path.abspath(notebooks_dir))
 
-import IPTestSuite_2DoF as ts
+import IPTestSuite_robotic_arm as ts
 from IPEnvironment import CollisionChecker
 from IPBenchmark import Benchmark
 import matplotlib.pylab as plt
@@ -33,7 +33,7 @@ def evaluate(configs: List[Dict]):
             title = benchmark.name
             
             start = time.time()
-            solution, deltas = astar.planPath(benchmark.startList, benchmark.goalList, config, store_viz=True)
+            solution, _ = astar.planPath(benchmark.startList, benchmark.goalList, config, store_viz=False)
             stats["execution_time"] = time.time() - start
 
             stats["road_map_size"] = len(astar.graph.nodes.keys())
@@ -66,10 +66,6 @@ def evaluate(configs: List[Dict]):
             stats_filename = f"{dir_name}/stats.json"
             with open(stats_filename, "w") as f:
                 json.dump(stats, f)
-
-            deltas_filename = f"{dir_name}/deltas.json"
-            with open(deltas_filename, "w") as f:
-                json.dump(deltas, f)
             
             graph_filename = f"{dir_name}/graph.json"
             with open(graph_filename, "w") as f:
@@ -95,4 +91,3 @@ if __name__ == "__main__":
     
     evaluate(configs=configs)
 
-        

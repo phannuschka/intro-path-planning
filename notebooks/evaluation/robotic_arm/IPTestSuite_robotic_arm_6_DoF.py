@@ -40,11 +40,11 @@ obst["obs3"] = LineString([(-1, 2), (1, 2)]).buffer(0.1)
 
 environment = KinChainCollisionChecker(robot, obst, limits=[[-3.14,3.14]] * n_joints, fk_resolution=.2)
 start_joint_pos = [0.0] * n_joints
-start_joint_pos[0] = 0.0
+start_joint_pos[0] = 0.8
 start_joint_pos = start_joint_pos[:n_joints]
 
 end_joint_pos = [0.0] * n_joints
-end_joint_pos[0] = 2.5
+end_joint_pos[0] = 4
 end_joint_pos = end_joint_pos[:n_joints]
 
 description = "Planar manipulator has to find a path around simple obstacles."

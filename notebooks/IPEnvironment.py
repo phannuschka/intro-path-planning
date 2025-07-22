@@ -6,6 +6,7 @@ This code is part of a series of notebooks regarding  "Introduction to robot pat
 License is based on Creative Commons: Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) (pls. check: http://creativecommons.org/licenses/by-nc/4.0/)
 """
 import cv2
+import shapely
 
 from IPPerfMonitor import IPPerfMonitor
 
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from shapely.geometry import Point, Polygon, LineString
 from shapely import plotting
+from shapely.strtree import STRtree
 
 import numpy as np
 
@@ -20,6 +22,9 @@ class CollisionChecker(object):
 
     def __init__(self, scene, limits=[[0.0, 22.0], [0.0, 22.0]], statistic=None):
         self.scene = scene
+        for key, value in self.scene.items():
+            shapely.prepare(value)
+        self.spatial_index = STRtree(list(self.scene.values()))
         self.limits = limits
 
     def getDim(self):

@@ -58,8 +58,10 @@ class KinChainCollisionChecker(CollisionChecker):
         return False
     
     def segmentInCollision(self, startPos, endPos):
-        for key, value in self.scene.items():
-            if value.intersects(LineString([(startPos[0], startPos[1]), (endPos[0], endPos[1])])):
+        linestring = LineString([(startPos[0], startPos[1]), (endPos[0], endPos[1])])
+        possible_matches = self.spatial_index.query(linestring)
+        for geom in possible_matches:
+            if list(self.scene.values())[geom].intersects(linestring):
                 return True
         return False
     

@@ -33,9 +33,10 @@ class PlanarJoint:
 
 
 class PlanarRobot:
-    def __init__(self, n_joints=2):
+    def __init__(self, n_joints=2, length=3.0):
         self.dim = n_joints
-        self.joints = [PlanarJoint(id=i) for i in range(self.dim)]
+        length = length / self.dim
+        self.joints = [PlanarJoint(id=i, a=length) for i in range(self.dim)]
         self.Ms = [sp.eye(3)]
         for joint in self.joints:
             self.Ms.append(self.Ms[-1] * joint.M)

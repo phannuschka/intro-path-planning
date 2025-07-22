@@ -52,7 +52,7 @@ def evaluate(configs: List[Dict]):
                 title += " (No path found!)"
 
             # save stats
-            dir_name = f"{script_dir}/results/{config["dof"]}DoF/{benchmark.name}"
+            dir_name = f"{script_dir}/results/{config['dof']}DoF/{benchmark.name}"
             dir_name = f"{dir_name}/disc{config['discretization']}_{config['heuristic']}_w{config['w']}"
             if config["reopen"]:
                 dir_name += "_reopen"

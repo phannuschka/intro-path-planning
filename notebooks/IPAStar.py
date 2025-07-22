@@ -162,15 +162,6 @@ class AStar(PlanerBase):
 
               currentBest = self.graph.nodes[currentBestName]
 
-              # Note: we start the grid search from start position,s o it is always included in the graph
-              # for goal, we check whether it is a neighbour (closer than a discretization step) of the current best node
-              if self._isNeighbour(currentBest["pos"], self.goal, discretization_steps):
-                if not self._collisionChecker.lineInCollision(currentBest["pos"], self.goal):
-                    self._addGraphNode(self.goal, currentBestName, name="goal")
-                    self._collectPath( "goal", self.solutionPath )
-                    self.goalFound = True
-                    break
-
               currentBest["status"]= 'closed'
               if self._collisionChecker.pointInCollision(currentBest["pos"]):
                 currentBest['collision']= 1
@@ -201,6 +192,15 @@ class AStar(PlanerBase):
 
               if self.store_viz:
                 self._store_iteration_delta('close_node', currentBestName, currentBest)
+
+                # Note: we start the grid search from start position,s o it is always included in the graph
+                # for goal, we check whether it is a neighbour (closer than a discretization step) of the current best node
+                if self._isNeighbour(currentBest["pos"], self.goal, discretization_steps):
+                    if not self._collisionChecker.lineInCollision(currentBest["pos"], self.goal):
+                        self._addGraphNode(self.goal, currentBestName, name="goal")
+                        self._collectPath("goal", self.solutionPath)
+                        self.goalFound = True
+                        break
 
               # handleNode merges with former expandNode
               self._handleNode(currentBestName, discretization_steps)

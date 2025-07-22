@@ -111,7 +111,9 @@ class LazyPRM(PRMBase):
         self._buildRoadmap(config["initialRoadmapSize"], config["kNearest"])
         
         maxTry = 0
-        while maxTry < config["maxIterations"]: 
+        while maxTry < config["maxIterations"]:
+            if maxTry % 10 == 0:
+                print(f"Iteration {maxTry} of {config['maxIterations']}")
             try:
                 path = nx.shortest_path(self.graph,"start","goal")
             except:

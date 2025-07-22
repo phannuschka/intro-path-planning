@@ -34,10 +34,9 @@ benchList = list()
 # -----------------------------------------
 
 obst = dict()
-obst["obs1"] = LineString([(-1, -4), (-1, 0.5)]).buffer(0.15)
-obst["obs2"] = LineString([(-1, 1.2), (-1, 4)]).buffer(0.15)
-obst["obs3"] = LineString([(-3.5, 1), (-2, 1)]).buffer(0.2)
-obst["obs4"] = LineString([(-3.5, 1), (-3.5, 3.5)]).buffer(0.2)
+obst["obs1"] = LineString([(-2, 0), (-0.8, 0)]).buffer(0.5)
+obst["obs2"] = LineString([(2, 0), (2, 1)]).buffer(0.2)
+obst["obs3"] = LineString([(-1, 2), (1, 2)]).buffer(0.1)
 
 environment = KinChainCollisionChecker(robot, obst, limits=[[-3.14,3.14]] * n_joints, fk_resolution=.2)
 start_joint_pos = [0.0] * n_joints

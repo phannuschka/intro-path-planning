@@ -181,12 +181,17 @@ class AStar(PlanerBase):
 
               # Note: check the segment from currentBest to parent for collision
               # doing it this late looses optimality, even with reopening
+              # except if we check if one of the other neighbours is closed and valid (not in collision or line collision)
               if self.check_connection and self.lazy_check_connection:
                   fathers = list(self.graph.successors(currentBestName))
                   if len(fathers) == 1:
                       if self._collisionChecker.lineInCollision(currentBest["pos"], self.graph.nodes[fathers[0]]['pos']):
                             currentBest['line_collision'] = 1
-                            self.graph.nodes[currentBestName]["g"] = float('inf')
+                            if self._repairNode(currentBestName):
+                                self._insertNodeNameInOpenList(currentBestName)
+                            else:
+                                currentBest["g"] = float('inf')  # mark as unreachable, so it will be reopened
+
                             if self.store_viz:
                                 self._store_iteration_delta('close_node', currentBestName, currentBest)
                             currentBestName = self._getBestNodeName()
@@ -204,10 +209,64 @@ class AStar(PlanerBase):
             if self.goalFound:
                 return self.solutionPath, self.deltas
             else:
-                return None, []
+                return [], self.deltas
         except Exception as e:
             print("Planning failed:", e)
-            return None, []
+            return [], self.deltas
+
+    def _repairNode(self, nodeName):
+        """Try to repair a node with invalid parent connection by finding alternative parent"""
+        current_pos = self.graph.nodes[nodeName]["pos"]
+        candidates = self._getValidGridNeighbors(current_pos)
+
+        best_parent = None
+        best_cost = float('inf')
+
+        for candidate_id in candidates:
+            candidate_pos = self.graph.nodes[candidate_id]["pos"]
+            if not self._collisionChecker.lineInCollision(current_pos, candidate_pos):
+                pos1 = np.array(current_pos)
+                pos2 = np.array(candidate_pos)
+                distance = np.linalg.norm(pos1 - pos2)
+                cost = self.graph.nodes[candidate_id]["g"] + distance
+                if cost < best_cost:
+                    best_parent = candidate_id
+                    best_cost = cost
+                print(f"Iteration {self.iteration}Candidate {candidate_id} with cost {cost} found as alternative parent.")
+
+        if best_parent is not None:
+            # Update parent connection
+            if self.store_viz:
+                edges = self.graph.out_edges(nodeName)
+                for edge in edges:
+                    self._store_iteration_delta('remove_edge', edge_data={'from_node': edge[1], 'to_node': edge[0]})
+
+            self.graph.remove_edges_from(list(self.graph.out_edges(nodeName)))
+            self.graph.add_edge(nodeName, best_parent)
+            self.graph.nodes[nodeName]["g"] = best_cost
+            self.graph.nodes[nodeName]["line_collision"] = 0  # Reset collision flag
+            self.graph.nodes[nodeName]["status"] = 'open'  # Mark as open again
+
+            if self.store_viz:
+                self._store_iteration_delta('add_edge', edge_data={'from_node': best_parent, 'to_node': nodeName})
+                self._store_iteration_delta('update_node', node_name=nodeName, node_data=self.graph.nodes[nodeName])
+
+            return True
+        return False  # No valid repair found
+
+    def _getValidGridNeighbors(self, pos):
+        """Get grid neighbors that are already closed and could serve as alternative parents"""
+        candidates = []
+        for i in range(self.dof):
+            for delta in [-self.discretization_steps[i], self.discretization_steps[i]]:
+                neighbor_pos = copy.copy(pos)
+                neighbor_pos[i] += delta
+                if not self._inLimits(neighbor_pos):
+                    continue
+                neighbor_id = self._getNodeID(neighbor_pos)
+                if neighbor_id in self.graph.nodes and self.graph.nodes[neighbor_id]["status"] == "closed" and self.graph.nodes[neighbor_id]["line_collision"] == 0 and self.graph.nodes[neighbor_id]["collision"] == 0:
+                    candidates.append(neighbor_id)
+        return candidates
 
     def _isNeighbour(self, pos1, pos2, discretization_steps: List[float]) -> bool:
         """Check whether two positions are within 1 discretization step in each dimension"""

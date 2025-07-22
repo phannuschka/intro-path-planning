@@ -19,9 +19,10 @@ import networkx as nx
 from typing import List, Dict
 
 def evaluate(configs: List[Dict]):
-    for benchmark in ts.benchList:
-        print(benchmark.name)
-        for config in configs:
+    for config in configs:
+        benchmarks = [ts.benchList[i] for i in config["benchmarks"]]
+        for benchmark in benchmarks:
+            print(benchmark.name)
             benchmark: Benchmark
             # Note: for 2 DOF and workspace = configuration space
             config["lowLimits"] = [limit[0] for limit in benchmark.collisionChecker.getEnvironmentLimits()]
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     astarConfig["discretization"] = [50 for _ in range(astarConfig["dof"])]
     astarConfig["check_connection"] = True
     astarConfig["lazy_check_connection"] = True
+    astarConfig["benchmarks"] = [0, 1, 2, 3, 4, 5]
 
     configs = []
     configs.append(astarConfig)

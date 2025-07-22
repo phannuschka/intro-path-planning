@@ -9,6 +9,7 @@ import IPTestSuite_robotic_arm_6_DoF as ts6
 import IPTestSuite_robotic_arm_9_DoF as ts9
 from IPEnvironment import CollisionChecker
 from IPBenchmark import Benchmark
+from IPLazyPRM import LazyPRM
 import matplotlib.pylab as plt
 from shapely.geometry import Point, Polygon, LineString
 from shapely import plotting
@@ -23,22 +24,55 @@ import numpy as np
 
 testSuits = {3: ts3, 6: ts6, 9: ts9}
 
-def evaluate(configs: List[Dict]):
+def evaluate(configs: List[Dict], algorithm="astar"):
     for config in configs:
         ts = testSuits[config["dof"]]
-        for benchmark in ts.benchList:
+        benchmarks = [ts.benchList[i] for i in config["benchmarks"]]
+        for benchmark in benchmarks:
             print(benchmark.name)
-
-            astar = AStar(benchmark.collisionChecker)
 
             stats = {}
             title = benchmark.name
-            
-            start = time.time()
-            solution, _ = astar.planPath(benchmark.startList, benchmark.goalList, config, store_viz=False)
-            stats["execution_time"] = time.time() - start
 
-            stats["road_map_size"] = len(astar.graph.nodes.keys())
+            match algorithm:
+                case "astar":
+                    solver = AStar(benchmark.collisionChecker)
+                    
+                    start = time.time()
+                    solution, _ = astar.planPath(benchmark.startList, benchmark.goalList, config, store_viz=False)
+                    stats["execution_time"] = time.time() - start
+
+                    dir_name = f"{script_dir}/results/{config["dof"]}DoF/{benchmark.name}"
+                    dir_name = f"{dir_name}/disc{config['discretization']}_{config['heuristic']}_w{config['w']}"
+                    if config["reopen"]:
+                        dir_name += "_reopen"
+                    if config["check_connection"]:
+                        dir_name += "_linetest"
+                        if config["lazy_check_connection"]:
+                            dir_name += "_lazy"
+
+                case "prm":
+                    solver = LazyPRM(benchmark.collisionChecker)
+                    lazyConfig = dict()
+                    lazyConfig["initialRoadmapSize"] = 500
+                    lazyConfig["updateRoadmapSize"]  = 50
+                    lazyConfig["kNearest"] = 20
+                    lazyConfig["maxIterations"] = 2000
+
+                    startList = benchmark.startList
+                    goalList  = benchmark.goalList
+
+                    start = time.time()
+                    solution = solver.planPath(startList, goalList, lazyConfig)
+                    stats["execution_time"] = time.time() - start
+
+                    dir_name = f"{script_dir}/results/{config["dof"]}DoF/{benchmark.name}"
+                    dir_name = f"{dir_name}/PRM"
+                    
+                case _:
+                    continue
+
+            stats["road_map_size"] = len(solver.graph.nodes.keys())
 
             stats["num_nodes_solution_path"] = -1
 
@@ -47,20 +81,9 @@ def evaluate(configs: List[Dict]):
             if solution != []:
                 stats["num_nodes_solution_path"] = len(solution)
                 
-                stats["solution_path_length"] = astar.graph.nodes[solution[-1]]["g"]
+                stats["solution_path_length"] = solver.graph.nodes[solution[-1]]["g"]
 
-                title += " (No path found!)"
-
-            # save stats
-            dir_name = f"{script_dir}/results/{config["dof"]}DoF/{benchmark.name}"
-            dir_name = f"{dir_name}/disc{config['discretization']}_{config['heuristic']}_w{config['w']}"
-            if config["reopen"]:
-                dir_name += "_reopen"
-            if config["check_connection"]:
-                dir_name += "_linetest"
-                if config["lazy_check_connection"]:
-                    dir_name += "_lazy"
-                
+                title += " (No path found!)"            
 
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name)
@@ -71,7 +94,7 @@ def evaluate(configs: List[Dict]):
             
             graph_filename = f"{dir_name}/graph.json"
             with open(graph_filename, "w") as f:
-                json.dump(nx.node_link_data(astar.graph), f)
+                json.dump(nx.node_link_data(solver.graph), f)
 
             solution_filename = f"{dir_name}/solution.json"
             with open(solution_filename, "w") as f:
@@ -85,15 +108,15 @@ if __name__ == "__main__":
         astarConfig["dof"] = 3 * i
         astarConfig["lowLimits"] = [-2 *np.pi for _ in range(astarConfig["dof"])]
         astarConfig["highLimits"] = [2 *np.pi for _ in range(astarConfig["dof"])]
-        astarConfig["discretization"] = [20 for _ in range(astarConfig["dof"])]
+        astarConfig["discretization"] = [2 for _ in range(astarConfig["dof"])]
         astarConfig["w"] = .5
         astarConfig["heuristic"]  = "euclidean"
         astarConfig["reopen"] = True
-        astarConfig["discretizationValue"] = 20
         astarConfig["check_connection"] = True
         astarConfig["lazy_check_connection"] = True
+        astarConfig["benchmarks"] = [0, 1, 2]
 
         configs.append(astarConfig)
     
-    evaluate(configs=configs)
+    evaluate(configs=configs, algorithm="astar")
 

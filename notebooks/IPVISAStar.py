@@ -576,15 +576,15 @@ def aStarVisualizeIncrementalOpenCV(planner, solution, deltas, output_dir="steps
         frame = planner._collisionChecker.drawOnImage(frame.copy(), scale=scale_x, offset=(margin, margin))
 
     # Draw start and goal nodes
-    start = to_pixel(pos[solution[0]])
-    goal = to_pixel(pos[solution[-1]])
+    start = to_pixel(planner.start)
+    goal = to_pixel(planner.goal)
     cv2.circle(frame, start, 20, (0, 255, 0), -1)
     cv2.putText(frame, 'S', (start[0] + 5, start[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 100, 0), 3)
     cv2.circle(frame, goal, 20, (0, 0, 255), -1)
     cv2.putText(frame, 'G', (goal[0] + 5, goal[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 100), 3)
 
     # Track drawn content
-    drawn_nodes = set([solution[0], solution[-1]])
+    drawn_nodes = set()# [solution[0], solution[-1]])
     drawn_edges = set()
 
     i = 0

@@ -59,6 +59,9 @@ def evaluate(configs: List[Dict]):
                 dir_name += "_reopen"
             if config["check_connection"]:
                 dir_name += "_linetest"
+                if config["lazy_check_connection"]:
+                    dir_name += "_lazy"
+                
 
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name)
@@ -88,7 +91,7 @@ if __name__ == "__main__":
     astarConfig["dof"] = 2
     astarConfig["discretization"] = [50 for _ in range(astarConfig["dof"])]
     astarConfig["check_connection"] = True
-    astarConfig["lazy_check_connection"] = False
+    astarConfig["lazy_check_connection"] = True
 
     configs = []
     configs.append(astarConfig)

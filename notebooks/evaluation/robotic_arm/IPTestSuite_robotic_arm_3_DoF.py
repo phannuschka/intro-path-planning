@@ -31,7 +31,7 @@ start_joint_pos[0] = 0.8
 start_joint_pos = start_joint_pos[:n_joints]
 
 end_joint_pos = [0.0] * 9
-end_joint_pos[0] = 4
+end_joint_pos[0] = 4 - 2 * np.pi
 end_joint_pos = end_joint_pos[:n_joints]
 
 description = "Planar manipulator has to find a path around simple obstacles."

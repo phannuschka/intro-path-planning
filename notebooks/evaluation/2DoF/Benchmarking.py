@@ -42,7 +42,7 @@ def evaluate(configs: List[Dict]):
 
             stats["solution_path_length"] = -1
             
-            if solution is not None:
+            if solution != []:
                 stats["num_nodes_solution_path"] = len(solution)
                 
                 stats["solution_path_length"] = astar.graph.nodes[solution[-1]]["g"]

@@ -28,8 +28,11 @@ def animate(path: str):
     for b in benchList:
         if b.name == bench_name:
             astar = AStar(b.collisionChecker)
+            astar.start = b.startList[0]
+            astar.goal = b.goalList[0]
 
     if astar is None:
+        print(f"Benchmark {bench_name} not found in the test suite.")
         return
         
     with open(f'{dir_name}/solution.json') as f:

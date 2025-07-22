@@ -39,10 +39,10 @@ def evaluate(configs: List[Dict], algorithm="astar"):
                     solver = AStar(benchmark.collisionChecker)
 
                     start = time.time()
-                    solution, _ = astar.planPath(benchmark.startList, benchmark.goalList, config, store_viz=False)
+                    solution, _ = solver.planPath(benchmark.startList, benchmark.goalList, config, store_viz=False)
                     stats["execution_time"] = time.time() - start
 
-                    dir_name = f"{script_dir}/results/{config["dof"]}DoF/{benchmark.name}"
+                    dir_name = f"{script_dir}/results/{config['dof']}DoF/{benchmark.name}"
                     dir_name = f"{dir_name}/disc{config['discretization']}_{config['heuristic']}_w{config['w']}"
                     if config["reopen"]:
                         dir_name += "_reopen"
@@ -66,7 +66,7 @@ def evaluate(configs: List[Dict], algorithm="astar"):
                     solution = solver.planPath(startList, goalList, lazyConfig)
                     stats["execution_time"] = time.time() - start
 
-                    dir_name = f"{script_dir}/results/{config["dof"]}DoF/{benchmark.name}"
+                    dir_name = f"{script_dir}/results/{config['dof']}DoF/{benchmark.name}"
                     dir_name = f"{dir_name}/PRM"
 
                 case _:

@@ -121,7 +121,7 @@ for i in range(1, layers):
                                                (offset - 1, offset + i)]).buffer(0.2)
         maze["divider"+str(i)] = LineString([(offset - i, offset), (offset + 1 - i, offset)]).buffer(0.2)
 description = "Planer has to find a passage out of the maze"
-benchList.append(Benchmark("Maze", CollisionChecker(maze), [[offset, offset]], [[offset, offset + layers + 1]], description, 5))
+benchList.append(Benchmark("Maze", CollisionChecker(maze), [[offset, offset]], [[offset, offset + layers]], description, 5))
 
 # -----------------------------------------
 

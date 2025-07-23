@@ -8,7 +8,6 @@ from IPBenchmark import Benchmark
 import IPTestSuite_2DoF as ts
 
 import matplotlib.pyplot as plt
-import networkx as nx 
 
 
 def main():
@@ -62,7 +61,7 @@ def main():
             horizontalalignment="center",
             verticalalignment="center")
 
-        file_name = f"{dir_name}/{benchmark.name}.png"
+        file_name = f"{dir_name}/{benchmark.name}.svg"
         fig.savefig(file_name)
 
 

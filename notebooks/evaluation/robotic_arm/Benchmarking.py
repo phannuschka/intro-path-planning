@@ -81,7 +81,18 @@ def evaluate(configs: List[Dict], algorithm="astar"):
             if solution != []:
                 stats["num_nodes_solution_path"] = len(solution)
 
-                stats["solution_path_length"] = solver.graph.nodes[solution[-1]]["g"]
+                match algorithm:
+                    case "astar":
+                        stats["solution_path_length"] = solver.graph.nodes[solution[-1]]["g"]
+
+                    case "prm":
+                        length = 0
+                        pos1 = np.array(solver.graph.nodes[solution[0]]["pos"])
+                        for node in solution[1:]:
+                            pos2 = np.array(solver.graph.nodes[node]["pos"])
+                            length += np.linalg.norm(pos2 -pos1)
+
+                        stats["solution_path_length"] = length
 
                 title += " (No path found!)"
 
@@ -103,12 +114,12 @@ def evaluate(configs: List[Dict], algorithm="astar"):
 
 if __name__ == "__main__":
     configs = []
-    for i in range(1, 4):
+    for i in range(1, 2):
         astarConfig = dict()
         astarConfig["dof"] = 3 * i
         astarConfig["lowLimits"] = [-2 *np.pi for _ in range(astarConfig["dof"])]
         astarConfig["highLimits"] = [2 *np.pi for _ in range(astarConfig["dof"])]
-        astarConfig["discretization"] = [2 for _ in range(astarConfig["dof"])]
+        astarConfig["discretization"] = [50 for _ in range(astarConfig["dof"])]
         astarConfig["w"] = .5
         astarConfig["heuristic"]  = "euclidean"
         astarConfig["reopen"] = True
@@ -118,5 +129,5 @@ if __name__ == "__main__":
 
         configs.append(astarConfig)
     
-    evaluate(configs=configs, algorithm="astar")
+    evaluate(configs=configs, algorithm="prm")
 

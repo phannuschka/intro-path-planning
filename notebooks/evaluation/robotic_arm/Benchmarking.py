@@ -114,20 +114,81 @@ def evaluate(configs: List[Dict], algorithm="astar"):
 
 if __name__ == "__main__":
     configs = []
-    for i in range(1, 2):
-        astarConfig = dict()
-        astarConfig["dof"] = 3 * i
-        astarConfig["lowLimits"] = [-2 *np.pi for _ in range(astarConfig["dof"])]
-        astarConfig["highLimits"] = [2 *np.pi for _ in range(astarConfig["dof"])]
-        astarConfig["discretization"] = [50 for _ in range(astarConfig["dof"])]
-        astarConfig["w"] = .5
-        astarConfig["heuristic"]  = "euclidean"
-        astarConfig["reopen"] = True
-        astarConfig["check_connection"] = True
-        astarConfig["lazy_check_connection"] = True
-        astarConfig["benchmarks"] = [0, 1, 2]
+    for disc in [4, 6]:
+        for i in range(1, 4):
+            disc_config = dict()
+            disc_config["dof"] = 3 * i
+            disc_config["lowLimits"] = [-2 *np.pi for _ in range(disc_config["dof"])]
+            disc_config["highLimits"] = [2 *np.pi for _ in range(disc_config["dof"])]
+            disc_config["discretization"] = [disc for _ in range(disc_config["dof"])]
+            disc_config["w"] = .5
+            disc_config["heuristic"]  = "euclidean"
+            disc_config["reopen"] = True
+            disc_config["check_connection"] = True
+            disc_config["lazy_check_connection"] = True
+            disc_config["benchmarks"] = [0, 1, 2]
 
-        configs.append(astarConfig)
+            configs.append(disc_config)
+
+    for disc in [10, 20]:
+        for i in range(1, 3):
+            disc_config = dict()
+            disc_config["dof"] = 3 * i
+            disc_config["lowLimits"] = [-2 *np.pi for _ in range(disc_config["dof"])]
+            disc_config["highLimits"] = [2 *np.pi for _ in range(disc_config["dof"])]
+            disc_config["discretization"] = [disc for _ in range(disc_config["dof"])]
+            disc_config["w"] = .5
+            disc_config["heuristic"]  = "euclidean"
+            disc_config["reopen"] = True
+            disc_config["check_connection"] = True
+            disc_config["lazy_check_connection"] = True
+            disc_config["benchmarks"] = [0, 1, 2]
+
+            configs.append(disc_config)
+
+    disc_config = dict()
+    disc_config["dof"] = 3
+    disc_config["lowLimits"] = [-2 *np.pi for _ in range(disc_config["dof"])]
+    disc_config["highLimits"] = [2 *np.pi for _ in range(disc_config["dof"])]
+    disc_config["discretization"] = [50 for _ in range(disc_config["dof"])]
+    disc_config["w"] = .5
+    disc_config["heuristic"]  = "euclidean"
+    disc_config["reopen"] = True
+    disc_config["check_connection"] = True
+    disc_config["lazy_check_connection"] = True
+    disc_config["benchmarks"] = [0, 1, 2]
+
+    configs.append(disc_config)
+
+    for w in [0.5, 0.75, 1]:
+        w_config  = dict()
+        w_config["dof"] = 3
+        w_config["lowLimits"] = [-2 *np.pi for _ in range(w_config["dof"])]
+        w_config["highLimits"] = [2 *np.pi for _ in range(w_config["dof"])]
+        w_config["discretization"] = [50 for _ in range(w_config["dof"])]
+        w_config["w"] = w
+        w_config["heuristic"]  = "euclidean"
+        w_config["reopen"] = True
+        w_config["check_connection"] = True
+        w_config["lazy_check_connection"] = True
+        w_config["benchmarks"] = [0, 1, 2]
+
+        configs.append(w_config)
+
+    reopen_config  = dict()
+    reopen_config["dof"] = 3
+    reopen_config["lowLimits"] = [-2 *np.pi for _ in range(reopen_config["dof"])]
+    reopen_config["highLimits"] = [2 *np.pi for _ in range(reopen_config["dof"])]
+    reopen_config["discretization"] = [50 for _ in range(reopen_config["dof"])]
+    reopen_config["w"] = 0.75
+    reopen_config["heuristic"]  = "euclidean"
+    reopen_config["reopen"] = False
+    reopen_config["check_connection"] = True
+    reopen_config["lazy_check_connection"] = True
+    reopen_config["benchmarks"] = [0, 1, 2]
+
+    configs.append(reopen_config)
     
-    evaluate(configs=configs, algorithm="prm")
+    
+    evaluate(configs=configs, algorithm="astar")
 

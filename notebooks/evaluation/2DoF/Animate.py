@@ -18,6 +18,32 @@ import click
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option("--path", "-p", type=str, help="The path of the saved results")
+@click.option("--all", "-a", is_flag=True, type=bool,  help="Animate all subdirectories not containing another directory")
+def main(path: str, all: bool):
+    if all:
+        leafs = []
+    
+        for root, subdirs, files in os.walk(path):
+            if os.path.basename(root) == 'animation':
+                continue
+
+            non_animation_subdirs = [d for d in subdirs if d != 'animation']
+            if not non_animation_subdirs:
+                leafs.append(root)
+
+        for subpath in leafs:
+            print(subpath)
+            solution_path = f"{subpath}/solution.json"
+
+            if not os.path.exists(solution_path):
+                continue
+
+            animate(path=subpath)
+
+    else :
+        animate(path=path)
+
+
 def animate(path: str):
 
     dir_name = path
@@ -52,4 +78,4 @@ def animate(path: str):
 
 
 if __name__ == "__main__":
-    animate()
+    main()

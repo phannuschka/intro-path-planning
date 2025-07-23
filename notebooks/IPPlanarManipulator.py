@@ -104,8 +104,6 @@ class PlanarRobot:
         return self._fast_robot.get_transforms_fast()
 
     def move(self, new_thetas):
-        print(new_thetas)
-        print(self.joints)
         assert len(new_thetas) == len(self.joints)
         self._fast_robot.move(new_thetas)
         # Keep old joints in sync

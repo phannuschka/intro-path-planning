@@ -86,6 +86,36 @@ def animateSolution(planner, environment: KinChainCollisionChecker, solution, fi
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option("--path", "-p", type=str, help="The path of the saved results")
 @click.option("--interpolate", "-i", default=True, type=bool,  help="Do you want to interpolate between the solution states?")
+@click.option("--all", "-a", is_flag=True, type=bool,  help="Animate all subdirectories not containing another directory")
+def main(path: str, interpolate: bool, all: bool):
+    if all:
+        leafs = []
+    
+        for root, subdirs, files in os.walk(path):
+            if os.path.basename(root) == 'animation':
+                continue
+
+            non_animation_subdirs = [d for d in subdirs if d != 'animation']
+            if not non_animation_subdirs:
+                leafs.append(root)
+
+        for subpath in leafs:
+            print(subpath)
+            solution_path = f"{subpath}/solution.json"
+
+            if not os.path.exists(solution_path):
+                continue
+            
+            with open(solution_path) as f:
+                if json.load(f) == []:
+                    continue
+
+            animate(path=subpath, interpolate=interpolate)
+
+    else :
+        animate(path=path, interpolate=interpolate)
+
+
 def animate(path: str, interpolate: bool):
 
     dir_name = path
@@ -132,5 +162,5 @@ def animate(path: str, interpolate: bool):
 
 
 if __name__ == "__main__":
-    animate()
+    main()
 

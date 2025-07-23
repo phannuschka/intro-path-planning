@@ -1,5 +1,9 @@
+import copy
 import sys
 import os
+
+from scipy.cluster.hierarchy import weighted
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 notebooks_dir = os.path.join(script_dir, "..", "..")
 sys.path.append(os.path.abspath(notebooks_dir))
@@ -82,19 +86,68 @@ def evaluate(configs: List[Dict]):
 
 
 if __name__ == "__main__":
-    astarConfig = dict()
-    astarConfig["w"] = .5
-    astarConfig["heuristic"]  = "euclidean"
-    astarConfig["reopen"] = True
-    astarConfig["dof"] = 2
-    astarConfig["discretization"] = [50 for _ in range(astarConfig["dof"])]
-    astarConfig["check_connection"] = True
-    astarConfig["lazy_check_connection"] = True
-    astarConfig["benchmarks"] = [0, 1, 2, 3, 4, 5]
-
     configs = []
-    configs.append(astarConfig)
-    
+
+    # Note: config for testing
+    # astarConfig = dict()
+    # astarConfig["w"] = .5
+    # astarConfig["heuristic"]  = "euclidean"
+    # astarConfig["reopen"] = True
+    # astarConfig["dof"] = 2
+    # astarConfig["discretization"] = [50 for _ in range(astarConfig["dof"])]
+    # astarConfig["check_connection"] = True
+    # astarConfig["lazy_check_connection"] = True
+    # astarConfig["benchmarks"] = [0, 1, 2, 3, 4, 5]
+    # configs.append(astarConfig)
+
+    #-----------------------------------------------------------------------------------------------
+
+    discretization_config = dict()
+    discretization_config["w"] = .5
+    discretization_config["heuristic"]  = "euclidean"
+    discretization_config["reopen"] = True
+    discretization_config["dof"] = 2
+    discretization_config["check_connection"] = True
+    discretization_config["lazy_check_connection"] = True
+    discretization_config["benchmarks"] = [0, 1, 2, 3, 4, 5]
+
+    for discretization_value in [10, 20, 50, 100, 200]:
+        config = copy.deepcopy(discretization_config)
+        config["discretization"] = [discretization_value for _ in range(config["dof"])]
+        configs.append(config)
+
+    #-----------------------------------------------------------------------------------------------
+
+    weight_config = dict()
+    weight_config["heuristic"] = "euclidean"
+    weight_config["reopen"] = True
+    weight_config["dof"] = 2
+    weight_config["discretization"] = [50 for _ in range(weight_config["dof"])]
+    weight_config["check_connection"] = True
+    weight_config["lazy_check_connection"] = True
+    weight_config["benchmarks"] = [0, 1, 2, 3, 4, 5]
+
+    for w_value in [0.5, 0.75, 1.0]:
+        config = copy.deepcopy(weight_config)
+        config["w"] = w_value
+        configs.append(config)
+
+    #-----------------------------------------------------------------------------------------------
+
+    reopen_config = dict()
+    reopen_config["w"] = 0.75
+    reopen_config["heuristic"] = "euclidean"
+    reopen_config["dof"] = 2
+    reopen_config["discretization"] = [100 for _ in range(reopen_config["dof"])]
+    reopen_config["check_connection"] = True
+    reopen_config["lazy_check_connection"] = True
+    reopen_config["benchmarks"] = [0, 1, 2, 3, 4, 5]
+    for reopen_value in [True, False]:
+        config = copy.deepcopy(reopen_config)
+        config["reopen"] = reopen_value
+        configs.append(config)
+
+    print(f"Evaluating {len(configs)} configs...")
     evaluate(configs=configs)
 
         

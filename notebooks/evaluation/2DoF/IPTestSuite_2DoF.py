@@ -13,6 +13,40 @@ import numpy as np
 
 benchList = list()
 
+
+# -----------------------------------------
+
+start = [2, 10]
+goal = [18, 10]
+
+big_blocks = dict()
+
+big_blocks["obstacle_1"] = Polygon([(3,  3), (3,  12), (7, 12), (7, 3)])
+big_blocks["obstacle_2"] = Polygon([(10,  10), (10,  18), (16, 18), (16, 10), (16, 7), (13,  7), (13,  10)])
+description = "Planer has to find a passage around the blocks"
+benchList.append(Benchmark("Big_Blocks", CollisionChecker(big_blocks), [start], [goal], description, 1))
+
+# -----------------------------------------
+
+filters_x = [4, 8, 12, 16]
+filters_y = [5, 15, 3, 8]
+start_y  = -2
+end_y = 24
+gap_size = 4
+start = [2, 10]
+goal = [18, 10]
+
+filters = dict()
+for i in range(len(filters_x)):
+    x = filters_x[i]
+    y = filters_y[i]
+
+    filters["filter_top_"+str(i)] = LineString([(x, start_y), (x, y - (gap_size / 2))]).buffer(0.5)
+    filters["filter_bottom_"+str(i)] = LineString([(x, end_y), (x, y + (gap_size / 2))]).buffer(0.5)
+
+description = "Planer has to find a passage through multiple filters"
+benchList.append(Benchmark("Filters", CollisionChecker(filters), [start], [goal], description, 2))
+
 # -----------------------------------------
 
 num_bubbles = 40

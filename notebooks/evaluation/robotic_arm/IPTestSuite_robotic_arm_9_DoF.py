@@ -38,7 +38,7 @@ obst["obs1"] = LineString([(-2, 0), (-0.8, 0)]).buffer(0.5)
 obst["obs2"] = LineString([(2, 0), (2, 1)]).buffer(0.2)
 obst["obs3"] = LineString([(-1, 2), (1, 2)]).buffer(0.1)
 
-environment = KinChainCollisionChecker(robot, obst, limits=[[-3.14,3.14]] * n_joints, fk_resolution=.2)
+environment = KinChainCollisionChecker(robot, obst, limits=[[-3.14,3.14]] * n_joints, fk_resolution=(np.pi / 180))
 start_joint_pos = [0.0] * n_joints
 start_joint_pos[0] = 0.8
 start_joint_pos = start_joint_pos[:n_joints]
@@ -57,12 +57,12 @@ benchList.append(benchmark)
 obst = dict()
 # Vertical wall with gap - creates narrow passage
 obst["obs1"] = LineString([(-1, -4), (-1, 0.5)]).buffer(0.15)
-obst["obs2"] = LineString([(-1, 1.2), (-1, 4)]).buffer(0.15)
+obst["obs2"] = LineString([(-1, 2), (-1, 4)]).buffer(0.15)
 # L-shaped obstacle in upper left
 obst["obs3"] = LineString([(-3.5, 1), (-2, 1)]).buffer(0.2)
 obst["obs4"] = LineString([(-3.5, 1), (-3.5, 3.5)]).buffer(0.2)
 
-environment = KinChainCollisionChecker(robot, obst, limits=[[-3.14,3.14]] * n_joints, fk_resolution=.2)
+environment = KinChainCollisionChecker(robot, obst, limits=[[-3.14,3.14]] * n_joints, fk_resolution=(np.pi / 180))
 start_joint_pos = [0.0] * n_joints
 start_joint_pos[0] = 0.0
 start_joint_pos = start_joint_pos[:n_joints]
@@ -94,7 +94,7 @@ obst["obs9"] = LineString([(1.125, 3.6), (1.5, 2.4)]).buffer(0.12)     # right s
 obst["obs10"] = LineString([(2.625, -0.75), (3.375, 0.0)]).buffer(0.1125)   # false right path
 obst["obs11"] = LineString([(-2.4, 1.5), (-3.0, 2.25)]).buffer(0.1125)  # false left path
 
-environment = KinChainCollisionChecker(robot, obst, limits=[[-3.14,3.14]] * n_joints, fk_resolution=.2)
+environment = KinChainCollisionChecker(robot, obst, limits=[[-3.14,3.14]] * n_joints, fk_resolution=(np.pi / 180))
 start_joint_pos = [0.0] * n_joints
 start_joint_pos[0] = np.pi/2
 start_joint_pos[3] = np.pi/2 - 0.3

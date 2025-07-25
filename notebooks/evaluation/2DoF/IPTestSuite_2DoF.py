@@ -176,3 +176,17 @@ spiral["spiral_1"] = LineString(spiral_corners_1).buffer(0.2)
 spiral["spiral_2"] = LineString(spiral_corners_2).buffer(0.2)
 description = "Planer has to find a passage out of the spiral and back in the other way"
 benchList.append(Benchmark("Spiral", CollisionChecker(spiral), [[offset + 1, offset]], [[offset - 1, offset]], description, 5))
+
+# -----------------------------------------
+
+scale = 10.0
+start = [0., 1.]
+goal = [1.4, 0.5]
+
+test = dict()
+test["obstacle_1"] = LineString([(1.1, 0), (1.1, 1.3)]).buffer(0.1)
+test["obstacle_2"] = LineString([(1.1, 1.7), (1.1, 3)]).buffer(0.1)
+description = "Test for presentation"
+benchList.append(Benchmark("Test", CollisionChecker(test, limits=[[-0.1, 2.1], [-0.1, 2.1]]), [start], [goal], description, 1))
+
+# -----------------------------------------

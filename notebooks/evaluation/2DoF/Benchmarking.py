@@ -118,34 +118,49 @@ if __name__ == "__main__":
 
     #-----------------------------------------------------------------------------------------------
 
-    weight_config = dict()
-    weight_config["heuristic"] = "euclidean"
-    weight_config["reopen"] = True
-    weight_config["dof"] = 2
-    weight_config["discretization"] = [50 for _ in range(weight_config["dof"])]
-    weight_config["check_connection"] = True
-    weight_config["lazy_check_connection"] = True
-    weight_config["benchmarks"] = [0, 1, 2, 3, 6]
-
-    for w_value in [0.5, 0.75, 1.0]:
-        config = copy.deepcopy(weight_config)
-        config["w"] = w_value
-        configs.append(config)
+    # weight_config = dict()
+    # weight_config["heuristic"] = "euclidean"
+    # weight_config["reopen"] = True
+    # weight_config["dof"] = 2
+    # weight_config["discretization"] = [50 for _ in range(weight_config["dof"])]
+    # weight_config["check_connection"] = True
+    # weight_config["lazy_check_connection"] = True
+    # weight_config["benchmarks"] = [0, 1, 2, 3, 6]
+    #
+    # for w_value in [0.5, 0.75, 1.0]:
+    #     config = copy.deepcopy(weight_config)
+    #     config["w"] = w_value
+    #     configs.append(config)
 
     #-----------------------------------------------------------------------------------------------
 
-    reopen_config = dict()
-    reopen_config["w"] = 0.75
-    reopen_config["heuristic"] = "euclidean"
-    reopen_config["dof"] = 2
-    reopen_config["discretization"] = [100 for _ in range(reopen_config["dof"])]
-    reopen_config["check_connection"] = True
-    reopen_config["lazy_check_connection"] = True
-    reopen_config["benchmarks"] = [0, 1, 2, 3, 6]
-    for reopen_value in [True, False]:
-        config = copy.deepcopy(reopen_config)
-        config["reopen"] = reopen_value
-        configs.append(config)
+    # reopen_config = dict()
+    # reopen_config["w"] = 0.75
+    # reopen_config["heuristic"] = "euclidean"
+    # reopen_config["dof"] = 2
+    # reopen_config["discretization"] = [100 for _ in range(reopen_config["dof"])]
+    # reopen_config["check_connection"] = True
+    # reopen_config["lazy_check_connection"] = True
+    # reopen_config["benchmarks"] = [0, 1, 2, 3, 6]
+    # for reopen_value in [True, False]:
+    #     config = copy.deepcopy(reopen_config)
+    #     config["reopen"] = reopen_value
+    #     configs.append(config)
+
+    #-----------------------------------------------------------------------------------------------
+    # Note: test for presentation
+    # astarConfig = dict()
+    # astarConfig["w"] = .5
+    # astarConfig["heuristic"]  = "euclidean"
+    # astarConfig["reopen"] = False
+    # astarConfig["dof"] = 2
+    # astarConfig["discretization"] = [2.1 for _ in range(astarConfig["dof"])]
+    # astarConfig["check_connection"] = False
+    # astarConfig["lazy_check_connection"] = True
+    # astarConfig["benchmarks"] = [8]
+    # configs.append(astarConfig)
+
+    #-----------------------------------------------------------------------------------------------
 
     print(f"Evaluating {len(configs)} configs...")
     evaluate(configs=configs)

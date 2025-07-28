@@ -51,6 +51,11 @@ Die Variationen und Kriterien sind frei kombinierbar.
 | Gewichtungsfaktor w        | Anzahl Punkte im Pfad |
 | Reopening an/aus           | Länge des Pfades      |
 
+### 5. Vergleich mit LazyPRM
+Vergleichen Sie die Benchmark Umgebungen aus 4. mit LazyPRM. Wählen Sie geeignete Kriterien, stellen Sie die Ergebnisse grafisch dar und diskutieren Sie diese.
+
+### 6. Erzeugen Sie die Animation der Suche in jedem Schritt des A*, die es ermöglicht im 2-DoF Fall das Verhalten exakt nachzuvollziehen.
+
 ## Aufgabe 2: Weitere Erläuterungen
 ### 1. Bewegungsbefehle
 Mit welchen Bewegungsbefehlen würden Sie den Ergebnispfad des A* in ein Roboterprogramm umwandeln? Erläutern Sie, warum das zwar möglich, aber nicht unbedingt sinnvoll ist.
@@ -58,7 +63,7 @@ Mit welchen Bewegungsbefehlen würden Sie den Ergebnispfad des A* in ein Roboter
 Was müssen Sie machen, damit er sinvoll abgefahren werden kann? Erläutern Sie die Vorgehensweise (nicht programmieren).
 
 # Projektaufbau
-Der erweitere A* Algorithmus ist in der Datei `core/IPAStarExtended.py` implementiert. 
+Der erweitere A* Algorithmus ist in der Datei `core/IPAStarExtended.py` implementiert. Die schrittweise Visualisierung ist in `core/IPVISAStar.py` implementiert.
 Eine schnellere Version des planaren Manipulators ist in der Datei `core/PlanarManipulator.py` implementiert.
 
 

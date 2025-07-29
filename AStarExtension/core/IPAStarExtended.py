@@ -14,7 +14,7 @@ import copy
 import networkx as nx
 import heapq
 import numpy as np
-
+from tqdm.notebook import tqdm
 from scipy.spatial.distance import euclidean, cityblock
 
 from IPPlanerBase import PlanerBase
@@ -156,12 +156,14 @@ class AStar(PlanerBase):
             self._addGraphNode(checkedStartList[0])
 
             currentBestName = self._getBestNodeName()
+            max_nodes = 1
+            for i in range(self.dof):
+                max_nodes *= self.discretization[i]
             self.iteration = 0
+            pbar = tqdm(total=max_nodes, desc="Search space explored", unit="nodes", leave=False)
             while currentBestName:
               self.iteration += 1
-              if self.iteration % 100 == 0:
-                print(f"Iteration {self.iteration}")
-
+              pbar.update(1)
               currentBest = self.graph.nodes[currentBestName]
 
               currentBest["status"]= 'closed'

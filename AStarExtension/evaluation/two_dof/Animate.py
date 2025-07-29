@@ -11,7 +11,7 @@ from IPVISAStar import aStarVisualizeIncrementalOpenCV
 from IPTestSuite_2DoF import benchList
 from IPEnvironment import CollisionChecker
 from IPBenchmark import Benchmark
-from IPAStar import AStar
+from IPAStarExtended import AStar
 import networkx as nx
 
 import click

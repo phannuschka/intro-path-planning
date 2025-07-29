@@ -1,7 +1,7 @@
 import sys
 import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
-notebooks_dir = os.path.join(script_dir, "..", "..")
+notebooks_dir = os.path.join(script_dir, "..", "..", "core")
 sys.path.append(os.path.abspath(notebooks_dir))
 
 import IPTestSuite_robotic_arm_3_DoF as ts3
@@ -13,7 +13,7 @@ from IPLazyPRM import LazyPRM
 import matplotlib.pylab as plt
 from shapely.geometry import Point, Polygon, LineString
 from shapely import plotting
-from IPAStar import AStar
+from IPAStarExtended import AStar
 from IPVISAStar import aStarVisualize
 from IPPerfMonitor import IPPerfMonitor
 import time
@@ -24,92 +24,103 @@ import numpy as np
 
 testSuits = {3: ts3, 6: ts6, 9: ts9}
 
-def evaluate(configs: List[Dict], algorithm="astar"):
+def get_config_dir_name(config: Dict, benchmark_name: str, algorithm: str = "astar"):
+    match algorithm:
+        case "astar":
+            dir_name = f"{script_dir}/results/{config['dof']}DoF/{benchmark_name}"
+            dir_name = f"{dir_name}/disc{config['discretization']}_{config['heuristic']}_w{config['w']}"
+            if config["reopen"]:
+                dir_name += "_reopen"
+            if config["check_connection"]:
+                dir_name += "_linetest"
+                if config["lazy_check_connection"]:
+                    dir_name += "_lazy"
+
+        case "prm":
+            dir_name = f"{script_dir}/results/{config['dof']}DoF/{benchmark_name}"
+            dir_name = f"{dir_name}/PRM"
+    
+    return dir_name
+
+def evaluate(config: Dict, benchmark: Benchmark, algorithm: str = "astar", dump: bool = True):
+
+    stats = {}
+    title = benchmark.name
+
+    match algorithm:
+        case "astar":
+            solver = AStar(benchmark.collisionChecker)
+
+            start = time.time()
+            solution, _ = solver.planPath(benchmark.startList, benchmark.goalList, config, store_viz=False)
+            stats["execution_time"] = time.time() - start
+
+        case "prm":
+            solver = LazyPRM(benchmark.collisionChecker)
+            lazyConfig = dict()
+            lazyConfig["initialRoadmapSize"] = 500
+            lazyConfig["updateRoadmapSize"]  = 50
+            lazyConfig["kNearest"] = 20
+            lazyConfig["maxIterations"] = 100
+
+            startList = benchmark.startList
+            goalList  = benchmark.goalList
+
+            start = time.time()
+            solution = solver.planPath(startList, goalList, lazyConfig)
+            stats["execution_time"] = time.time() - start
+
+    stats["road_map_size"] = len(solver.graph.nodes.keys())
+
+    stats["num_nodes_solution_path"] = -1
+
+    stats["solution_path_length"] = -1
+
+    if solution != []:
+        stats["num_nodes_solution_path"] = len(solution)
+
+        match algorithm:
+            case "astar":
+                stats["solution_path_length"] = solver.graph.nodes[solution[-1]]["g"]
+
+            case "prm":
+                length = 0
+                pos1 = np.array(solver.graph.nodes[solution[0]]["pos"])
+                for node in solution[1:]:
+                    pos2 = np.array(solver.graph.nodes[node]["pos"])
+                    length += np.linalg.norm(pos2 -pos1)
+
+                stats["solution_path_length"] = length
+
+    if dump:
+        dir_name = get_config_dir_name(config=config, benchmark_name=benchmark.name)
+
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+
+        stats_filename = f"{dir_name}/stats.json"
+        with open(stats_filename, "w") as f:
+            json.dump(stats, f)
+        
+        graph_filename = f"{dir_name}/graph.json"
+        with open(graph_filename, "w") as f:
+            json.dump(nx.node_link_data(solver.graph), f)
+
+        solution_filename = f"{dir_name}/solution.json"
+        with open(solution_filename, "w") as f:
+            json.dump(solution, f)
+
+    return stats, solution, solver 
+
+
+def evaluate_all(configs: List[Dict], algorithm="astar"):
     for config in configs:
         ts = testSuits[config["dof"]]
         benchmarks = [ts.benchList[i] for i in config["benchmarks"]]
         for benchmark in benchmarks:
             print(benchmark.name)
 
-            stats = {}
-            title = benchmark.name
-
-            match algorithm:
-                case "astar":
-                    solver = AStar(benchmark.collisionChecker)
-
-                    start = time.time()
-                    solution, _ = solver.planPath(benchmark.startList, benchmark.goalList, config, store_viz=False)
-                    stats["execution_time"] = time.time() - start
-
-                    dir_name = f"{script_dir}/results/{config['dof']}DoF/{benchmark.name}"
-                    dir_name = f"{dir_name}/disc{config['discretization']}_{config['heuristic']}_w{config['w']}"
-                    if config["reopen"]:
-                        dir_name += "_reopen"
-                    if config["check_connection"]:
-                        dir_name += "_linetest"
-                        if config["lazy_check_connection"]:
-                            dir_name += "_lazy"
-
-                case "prm":
-                    solver = LazyPRM(benchmark.collisionChecker)
-                    lazyConfig = dict()
-                    lazyConfig["initialRoadmapSize"] = 500
-                    lazyConfig["updateRoadmapSize"]  = 50
-                    lazyConfig["kNearest"] = 20
-                    lazyConfig["maxIterations"] = 2000
-
-                    startList = benchmark.startList
-                    goalList  = benchmark.goalList
-
-                    start = time.time()
-                    solution = solver.planPath(startList, goalList, lazyConfig)
-                    stats["execution_time"] = time.time() - start
-
-                    dir_name = f"{script_dir}/results/{config['dof']}DoF/{benchmark.name}"
-                    dir_name = f"{dir_name}/PRM"
-
-                case _:
-                    continue
-
-            stats["road_map_size"] = len(solver.graph.nodes.keys())
-
-            stats["num_nodes_solution_path"] = -1
-
-            stats["solution_path_length"] = -1
-
-            if solution != []:
-                stats["num_nodes_solution_path"] = len(solution)
-
-                match algorithm:
-                    case "astar":
-                        stats["solution_path_length"] = solver.graph.nodes[solution[-1]]["g"]
-
-                    case "prm":
-                        length = 0
-                        pos1 = np.array(solver.graph.nodes[solution[0]]["pos"])
-                        for node in solution[1:]:
-                            pos2 = np.array(solver.graph.nodes[node]["pos"])
-                            length += np.linalg.norm(pos2 -pos1)
-
-                        stats["solution_path_length"] = length
-
-                title += " (No path found!)"
-
-            if not os.path.exists(dir_name):
-                os.makedirs(dir_name)
-
-            stats_filename = f"{dir_name}/stats.json"
-            with open(stats_filename, "w") as f:
-                json.dump(stats, f)
-            
-            graph_filename = f"{dir_name}/graph.json"
-            with open(graph_filename, "w") as f:
-                json.dump(nx.node_link_data(solver.graph), f)
-
-            solution_filename = f"{dir_name}/solution.json"
-            with open(solution_filename, "w") as f:
-                json.dump(solution, f)
+            _ = evaluate(config=config, benchmark=benchmark, algorithm=algorithm, dump=True)
 
 
 if __name__ == "__main__":
@@ -190,5 +201,5 @@ if __name__ == "__main__":
     configs.append(reopen_config)
     
     
-    evaluate(configs=configs, algorithm="astar")
+    evaluate_all(configs=configs, algorithm="astar")
 

@@ -5,7 +5,7 @@ notebooks_dir = os.path.join(script_dir, "..", "..")
 sys.path.append(os.path.abspath(notebooks_dir))
 
 from IPBenchmark import Benchmark 
-import AStarExtension.evaluation.two_dof.IPTestSuite_2DoF as ts
+import evaluation.two_dof.IPTestSuite_2DoF as ts
 
 import matplotlib.pyplot as plt
 

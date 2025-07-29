@@ -65,7 +65,7 @@ def visualizeBenchmark(benchmark: Benchmark, discretizationX: int | None = None,
                         y_grid.append(y_pos)
 
         # Plot grid points
-        ax.scatter(x_grid, y_grid, s=10, c='lightgray', alpha=0.5, zorder=1)
+        ax.scatter(x_grid, y_grid, s=10, c='gray', alpha=0.5, zorder=1)
 
 
 

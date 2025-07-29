@@ -76,7 +76,7 @@ def evaluate(config: Dict, benchmark: Benchmark, dump: bool = True):
         
         graph_filename = f"{dir_name}/graph.json"
         with open(graph_filename, "w") as f:
-            json.dump(nx.node_link_data(astar.graph), f)
+            json.dump(nx.node_link_data(astar.graph, edges="links"), f)
 
         solution_filename = f"{dir_name}/solution.json"
         with open(solution_filename, "w") as f:

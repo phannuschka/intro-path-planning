@@ -78,7 +78,9 @@ def aStarVisualizeIncrementalOpenCV(planner, solution, deltas, output_dir="steps
         deltas: List of delta updates (with iteration & action_type).
         output_dir: Folder to save frames.
     """
-    os.makedirs(output_dir, exist_ok=True)
+    assert plot_matplotlib and ax is not None or not plot_matplotlib
+    if not plot_matplotlib:
+        os.makedirs(output_dir, exist_ok=True)
     graph = planner.graph
     pos = nx.get_node_attributes(graph, 'pos')
     limits = planner._collisionChecker.getEnvironmentLimits()

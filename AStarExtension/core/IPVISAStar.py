@@ -67,7 +67,7 @@ def aStarVisualize(planner, solution, ax = None, nodeSize = 300, viz_solution=Tr
         nx.draw_networkx_labels(graph,pos,labels={solution[-1]: "G"},  ax = ax)
 
 
-def aStarVisualizeIncrementalOpenCV(planner, solution, deltas, output_dir="steps_fast"):
+def aStarVisualizeIncrementalOpenCV(planner, solution, deltas, output_dir="steps", plot_matplotlib=False, ax=None):
     """
     Fast, persistent OpenCV-based visualization of A* search with proper scaling.
     Only updates what's new, and uses planner environment limits for scaling.
@@ -263,5 +263,10 @@ def aStarVisualizeIncrementalOpenCV(planner, solution, deltas, output_dir="steps
                             cv2.line(frame_with_text, (px, py), (next_px, next_py), (0, 255, 0), 10)
 
 
-        cv2.imwrite(f"{output_dir}/step_{iteration:03d}.jpg", frame_with_text)
+        if not plot_matplotlib:
+            cv2.imwrite(f"{output_dir}/step_{iteration:03d}.jpg", frame_with_text)
+        else:
+            if i ==  len(deltas):
+                ax.imshow(np.flip(frame_with_text, axis=-1))
+
 

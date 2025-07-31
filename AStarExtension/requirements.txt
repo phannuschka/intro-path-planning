@@ -4,3 +4,7 @@ tqdm
 networkx
 scipy
 matplotlib
+ipywidgets
+shapely
+pandas
+click

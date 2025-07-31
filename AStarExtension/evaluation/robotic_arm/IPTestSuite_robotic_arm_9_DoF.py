@@ -72,7 +72,7 @@ end_joint_pos = end_joint_pos[:n_joints]
 
 description = "Planar manipulator has to find a path around simple obstacles with a narrow passage."
 
-benchmark = Benchmark("narrow_passage", environment, [start_joint_pos], [end_joint_pos], description, level=2)
+benchmark = Benchmark("medium", environment, [start_joint_pos], [end_joint_pos], description, level=2)
 benchList.append(benchmark)
 
 # -----------------------------------------
@@ -106,5 +106,5 @@ end_joint_pos[6] = 0.8
 
 description = "Planar manipulator has to find a path through a complex scene with multiple layers and dead ends."
 
-benchmark = Benchmark("complex_scene", environment, [start_joint_pos], [end_joint_pos], description, level=3)
+benchmark = Benchmark("complex", environment, [start_joint_pos], [end_joint_pos], description, level=3)
 benchList.append(benchmark)

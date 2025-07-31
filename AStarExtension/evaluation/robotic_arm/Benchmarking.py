@@ -93,7 +93,7 @@ def evaluate(config: Dict, benchmark: Benchmark, algorithm: str = "astar", dump:
                 stats["solution_path_length"] = length
 
     if dump:
-        dir_name = get_config_dir_name(config=config, benchmark_name=benchmark.name)
+        dir_name = get_config_dir_name(config=config, benchmark_name=benchmark.name, algorithm=algorithm)
 
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)

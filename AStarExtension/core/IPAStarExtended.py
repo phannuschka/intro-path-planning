@@ -236,7 +236,7 @@ class AStar(PlanerBase):
                 if cost < best_cost:
                     best_parent = candidate_id
                     best_cost = cost
-                print(f"Iteration {self.iteration}Candidate {candidate_id} with cost {cost} found as alternative parent.")
+                # print(f"Iteration {self.iteration}Candidate {candidate_id} with cost {cost} found as alternative parent.")
 
         if best_parent is not None:
             # Update parent connection
@@ -353,8 +353,7 @@ class AStar(PlanerBase):
 
                             # reopening of nodes if the new g value is smaller than the old one (avoid numerical issues)
                             if tentativeGScore < newPosOldG and abs(tentativeGScore - newPosOldG) > 0.5 * discretization_step:
-                                print("reopening node:", newNodeID, "with g=", tentativeGScore, "old g=", newPosOldG)
-
+                                # print("reopening node:", newNodeID, "with g=", tentativeGScore, "old g=", newPosOldG)
                                 if self.store_viz:
                                     edges = self.graph.out_edges(newNodeID)
                                     if len(edges) > 0:
@@ -401,7 +400,7 @@ class AStar(PlanerBase):
                                 if tentativeGScore < newPosOldG and (
                                         abs(tentativeGScore - newPosOldG) > 0.5 * discretization_step_u or
                                         abs(tentativeGScore - newPosOldG) > 0.5 * discretization_step_v):
-                                    print("reopening node:", newNodeID, "with g=", tentativeGScore, "old g=", newPosOldG)
+                                    # print("reopening node:", newNodeID, "with g=", tentativeGScore, "old g=", newPosOldG)
 
                                     if self.store_viz:
                                         edges = self.graph.out_edges(newNodeID)
@@ -432,7 +431,6 @@ class AStar(PlanerBase):
         node = self.graph.nodes[nodeName]
         return  self.w * self._computeHeuristicValue(nodeName) + (1 - self.w) * node["g"]
 
-                      
     def _collectPath(self, nodeName, solutionPath):
       fathers = list(self.graph.successors(nodeName))
       if len(fathers) == 1:
@@ -453,5 +451,3 @@ class AStar(PlanerBase):
             result = False
             break
         return result
-
-

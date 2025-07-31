@@ -148,7 +148,7 @@ def animate(path: str, interpolate: bool):
         solution = json.load(f)
 
     with open(f'{dir_name}/graph.json') as f:
-        graph = nx.node_link_graph(json.load(f))
+        graph = nx.node_link_graph(json.load(f), links="edges")
         astar.graph = graph
 
     output_dir_name = dir_name + "/animation"

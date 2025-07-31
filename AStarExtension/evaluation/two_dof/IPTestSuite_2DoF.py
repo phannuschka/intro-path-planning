@@ -190,3 +190,8 @@ description = "Test for presentation"
 benchList.append(Benchmark("Test", CollisionChecker(test, limits=[[-0.1, 2.1], [-0.1, 2.1]]), [start], [goal], description, 1))
 
 # -----------------------------------------
+
+trapField = dict()
+trapField["obs1"] =   LineString([(6, 18), (6, 8), (16, 8), (16,18)]).buffer(1.0)
+description = "Following the direct connection from goal to start would lead the algorithm into a trap."
+benchList.append(Benchmark("Trap", CollisionChecker(trapField), [[10,15]], [[10,1]], description, 2))

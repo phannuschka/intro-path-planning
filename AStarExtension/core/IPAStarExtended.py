@@ -325,7 +325,7 @@ class AStar(PlanerBase):
     def _getBestNodeName(self):
         """ Returns the best name of best node """
         nodeName = heapq.heappop(self.openList)[1]
-        if self.graph[nodeName]["g"] == float('inf'):  # if the g value is inf, the node is unreachable
+        if self.graph.nodes[nodeName]["g"] == float('inf'):  # if the g value is inf, the node is unreachable
             return self._getBestNodeName()
         return nodeName
 

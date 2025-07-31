@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 def visualizeBenchmark(benchmark: Benchmark, discretizationX: int | None = None, discretizationY: int | None = None):
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(1, 1, 1)
     limits = benchmark.collisionChecker.getEnvironmentLimits()
     ax.set_xlim(limits[0])

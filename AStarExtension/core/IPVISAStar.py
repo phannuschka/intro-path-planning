@@ -38,12 +38,12 @@ def aStarVisualize(planner, solution, ax = None, nodeSize = 300, viz_solution=Tr
                                edge_color='b',
                                width=3.0
                             )
-    print(f"Drawing graph took {time.time() - start:.4f} seconds")
+    # print(f"Drawing graph took {time.time() - start:.4f} seconds")
 
     if viz_obstacles:
         start = time.time()
         collChecker.drawObstacles(ax)
-        print(f"Drawing obstacles took {time.time() - start:.4f} seconds")
+        # print(f"Drawing obstacles took {time.time() - start:.4f} seconds")
 
     if viz_solution:
         # draw nodes based on solution path
